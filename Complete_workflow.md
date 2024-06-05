@@ -1,16 +1,7 @@
----
-title: "Analyses for Ne estimation in ectomycorrhizal fungi"
-author: "Anouck Champion"
-date: "2024-06-05"
-output: 
-  html_document:
-    keep_md: true
-editor_options: 
-  markdown: 
-    wrap: 72
----
-
-
+Analyses for Ne estimation in ectomycorrhizal fungi
+================
+Anouck Champion
+2024-06-05
 
 This document describes the analyses carried out in R and Genotoul
 bioinfo to determine the effective population size (Ne) in 4 species of
@@ -21,39 +12,32 @@ identification of bias in Ne estimation.
 
 ## Packages loading
 
-
-
-
-
-
-
 ## Effect of ploidy on Ne estimations
 
-Dataset used : *Tuber melanosporum* from Taschen et al. 2016
+Dataset used : *Tuber melanosporum* from Taschen et al. 2016
 
 We want to compare Ne estimations (and other metrics : He, Fis) for 3
 different approaches :
 
--   1 : Use the “zygotes” (diploid data) provided in the article
--   2 : Duplicate haploid data to create artificial diploid genotypes
-    (homozygotes only)
--   3 : Combine haploid genotypes to create artificial diploid genotypes
+- 1 : Use the “zygotes” (diploid data) provided in the article
+- 2 : Duplicate haploid data to create artificial diploid genotypes
+  (homozygotes only)
+- 3 : Combine haploid genotypes to create artificial diploid genotypes
 
 ### Filtering step
 
 Before accounting for the impact of ploidy, we must check 2 things :
 
--   are they missing data in the dataset ?
--   are they clones in the dataset ?
--   is the population homogenous or structured ?
+- are they missing data in the dataset ?
+- are they clones in the dataset ?
+- is the population homogenous or structured ?
 
 #### Diploid data (zygotes)
 
 First exploration of the data, to see if we can combine several
 locations in one population.
 
-
-```r
+``` r
 data<-read.genepop(here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", "zygotes", 
                         "zygotes_all_noclones.gen"), ncode = 3L, quiet = TRUE)
 
@@ -69,115 +53,102 @@ scatter(dapc0)
 Then, starting from the original dataset. This is an example for SB1,
 but the same code was used for SB2.
 
-
-```r
+``` r
 # SB1
 zyg_SB1<-read.genepop(here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", "zygotes", 
                         "zygotes_SB1.gen"), ncode = 3L, quiet = TRUE)
 zyg_SB1
 ```
 
-```
-## /// GENIND OBJECT /////////
-## 
-##  // 20 individuals; 13 loci; 35 alleles; size: 17.6 Kb
-## 
-##  // Basic content
-##    @tab:  20 x 35 matrix of allele counts
-##    @loc.n.all: number of alleles per locus (range: 1-5)
-##    @loc.fac: locus factor for the 35 columns of @tab
-##    @all.names: list of allele names for each locus
-##    @ploidy: ploidy of each individual  (range: 2-2)
-##    @type:  codom
-##    @call: read.genepop(file = here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", 
-##     "zygotes", "zygotes_SB1.gen"), ncode = 3L, quiet = TRUE)
-## 
-##  // Optional content
-##    @pop: population of each individual (group size range: 20-20)
-```
+    ## /// GENIND OBJECT /////////
+    ## 
+    ##  // 20 individuals; 13 loci; 35 alleles; size: 17.6 Kb
+    ## 
+    ##  // Basic content
+    ##    @tab:  20 x 35 matrix of allele counts
+    ##    @loc.n.all: number of alleles per locus (range: 1-5)
+    ##    @loc.fac: locus factor for the 35 columns of @tab
+    ##    @all.names: list of allele names for each locus
+    ##    @ploidy: ploidy of each individual  (range: 2-2)
+    ##    @type:  codom
+    ##    @call: read.genepop(file = here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", 
+    ##     "zygotes", "zygotes_SB1.gen"), ncode = 3L, quiet = TRUE)
+    ## 
+    ##  // Optional content
+    ##    @pop: population of each individual (group size range: 20-20)
 
-```r
+``` r
 # Missing data ? (with poppr package)
 missing.loc<-missingno(zyg_SB1, type = "loci", cutoff = 0.20);missing.loc
 ```
 
-```
-## 
-## Found 53 missing values.
-## 
-## 2 loci contained missing values greater than 20%
-## 
-## Removing 2 loci: Tm2, Tm98
-```
+    ## 
+    ## Found 53 missing values.
+    ## 
+    ## 2 loci contained missing values greater than 20%
+    ## 
+    ## Removing 2 loci: Tm2, Tm98
 
-```
-## /// GENIND OBJECT /////////
-## 
-##  // 20 individuals; 11 loci; 29 alleles; size: 15.2 Kb
-## 
-##  // Basic content
-##    @tab:  20 x 29 matrix of allele counts
-##    @loc.n.all: number of alleles per locus (range: 1-5)
-##    @loc.fac: locus factor for the 29 columns of @tab
-##    @all.names: list of allele names for each locus
-##    @ploidy: ploidy of each individual  (range: 2-2)
-##    @type:  codom
-##    @call: .local(x = x, i = i, j = j, drop = drop)
-## 
-##  // Optional content
-##    @pop: population of each individual (group size range: 20-20)
-```
+    ## /// GENIND OBJECT /////////
+    ## 
+    ##  // 20 individuals; 11 loci; 29 alleles; size: 15.2 Kb
+    ## 
+    ##  // Basic content
+    ##    @tab:  20 x 29 matrix of allele counts
+    ##    @loc.n.all: number of alleles per locus (range: 1-5)
+    ##    @loc.fac: locus factor for the 29 columns of @tab
+    ##    @all.names: list of allele names for each locus
+    ##    @ploidy: ploidy of each individual  (range: 2-2)
+    ##    @type:  codom
+    ##    @call: .local(x = x, i = i, j = j, drop = drop)
+    ## 
+    ##  // Optional content
+    ##    @pop: population of each individual (group size range: 20-20)
 
-```r
+``` r
 missing.ind<-missingno(missing.loc, type = "genotype", cutoff = 0.20);missing.ind
 ```
 
-```
-## 
-##  No genotypes with missing values above 20% found.
-```
+    ## 
+    ##  No genotypes with missing values above 20% found.
 
-```
-## /// GENIND OBJECT /////////
-## 
-##  // 20 individuals; 11 loci; 29 alleles; size: 15.2 Kb
-## 
-##  // Basic content
-##    @tab:  20 x 29 matrix of allele counts
-##    @loc.n.all: number of alleles per locus (range: 1-5)
-##    @loc.fac: locus factor for the 29 columns of @tab
-##    @all.names: list of allele names for each locus
-##    @ploidy: ploidy of each individual  (range: 2-2)
-##    @type:  codom
-##    @call: .local(x = x, i = i, j = j, drop = drop)
-## 
-##  // Optional content
-##    @pop: population of each individual (group size range: 20-20)
-```
+    ## /// GENIND OBJECT /////////
+    ## 
+    ##  // 20 individuals; 11 loci; 29 alleles; size: 15.2 Kb
+    ## 
+    ##  // Basic content
+    ##    @tab:  20 x 29 matrix of allele counts
+    ##    @loc.n.all: number of alleles per locus (range: 1-5)
+    ##    @loc.fac: locus factor for the 29 columns of @tab
+    ##    @all.names: list of allele names for each locus
+    ##    @ploidy: ploidy of each individual  (range: 2-2)
+    ##    @type:  codom
+    ##    @call: .local(x = x, i = i, j = j, drop = drop)
+    ## 
+    ##  // Optional content
+    ##    @pop: population of each individual (group size range: 20-20)
 
-```r
+``` r
 zyg_SB1<-missing.ind;zyg_SB1
 ```
 
-```
-## /// GENIND OBJECT /////////
-## 
-##  // 20 individuals; 11 loci; 29 alleles; size: 15.2 Kb
-## 
-##  // Basic content
-##    @tab:  20 x 29 matrix of allele counts
-##    @loc.n.all: number of alleles per locus (range: 1-5)
-##    @loc.fac: locus factor for the 29 columns of @tab
-##    @all.names: list of allele names for each locus
-##    @ploidy: ploidy of each individual  (range: 2-2)
-##    @type:  codom
-##    @call: .local(x = x, i = i, j = j, drop = drop)
-## 
-##  // Optional content
-##    @pop: population of each individual (group size range: 20-20)
-```
+    ## /// GENIND OBJECT /////////
+    ## 
+    ##  // 20 individuals; 11 loci; 29 alleles; size: 15.2 Kb
+    ## 
+    ##  // Basic content
+    ##    @tab:  20 x 29 matrix of allele counts
+    ##    @loc.n.all: number of alleles per locus (range: 1-5)
+    ##    @loc.fac: locus factor for the 29 columns of @tab
+    ##    @all.names: list of allele names for each locus
+    ##    @ploidy: ploidy of each individual  (range: 2-2)
+    ##    @type:  codom
+    ##    @call: .local(x = x, i = i, j = j, drop = drop)
+    ## 
+    ##  // Optional content
+    ##    @pop: population of each individual (group size range: 20-20)
 
-```r
+``` r
 # Clones ? (with Rclone method)
 
 # Reformat the data for Rclone
@@ -190,31 +161,29 @@ row.names(data2) <- seq_len(nrow(data2)) # make rownames consecutive integers st
 head(data2)
 ```
 
-```
-##   me02_1 me02_2 me11_1 me11_2 me13_1 me13_2 me14_1 me14_2 Tm1_1 Tm1_2 Tm9_1
-## 1    155    155    302    302    118    118    142    142   342   342   326
-## 2    155    155    302    302    118    118    142    142   342   342   326
-## 3    155    155    302    302    118    118    136    142   342   342   326
-## 4    155    155    302    302    118    118    142    142   342   342   326
-## 5    155    155    302    302    118    118    142    142   342   342   326
-## 6    155    155    302    302    118    118    142    142   000   000   326
-##   Tm9_2 Tm22_1 Tm22_2 Tm21_1 Tm21_2 Tm75_1 Tm75_2 Tm269_1 Tm269_2 Tm127_1
-## 1   326    322    322    313    313    342    342     000     000     182
-## 2   326    322    328    313    316    342    342     371     371     182
-## 3   326    322    322    316    316    342    342     371     371     182
-## 4   326    322    328    316    316    342    342     371     371     182
-## 5   326    322    322    313    313    342    342     000     000     182
-## 6   326    322    322    000    000    342    342     371     371     182
-##   Tm127_2
-## 1     182
-## 2     182
-## 3     192
-## 4     192
-## 5     182
-## 6     182
-```
+    ##   me02_1 me02_2 me11_1 me11_2 me13_1 me13_2 me14_1 me14_2 Tm1_1 Tm1_2 Tm9_1
+    ## 1    155    155    302    302    118    118    142    142   342   342   326
+    ## 2    155    155    302    302    118    118    142    142   342   342   326
+    ## 3    155    155    302    302    118    118    136    142   342   342   326
+    ## 4    155    155    302    302    118    118    142    142   342   342   326
+    ## 5    155    155    302    302    118    118    142    142   342   342   326
+    ## 6    155    155    302    302    118    118    142    142   000   000   326
+    ##   Tm9_2 Tm22_1 Tm22_2 Tm21_1 Tm21_2 Tm75_1 Tm75_2 Tm269_1 Tm269_2 Tm127_1
+    ## 1   326    322    322    313    313    342    342     000     000     182
+    ## 2   326    322    328    313    316    342    342     371     371     182
+    ## 3   326    322    322    316    316    342    342     371     371     182
+    ## 4   326    322    328    316    316    342    342     371     371     182
+    ## 5   326    322    322    313    313    342    342     000     000     182
+    ## 6   326    322    322    000    000    342    342     371     371     182
+    ##   Tm127_2
+    ## 1     182
+    ## 2     182
+    ## 3     192
+    ## 4     192
+    ## 5     182
+    ## 6     182
 
-```r
+``` r
 # We can write this dataframe to a new file
 write.table(data2, 
             file = here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", "zygotes","SB1_Rclone.txt"),
@@ -226,172 +195,158 @@ write.table(data2,
 list_all_tab(data2)
 ```
 
-```
-##   locus_1 locus_2 locus_3 locus_4 locus_5 locus_6 locus_7 locus_8 locus_9
-## 1     155     302     118     142     342     326     322     313     342
-## 2     161     296             136     000     301     328     316     326
-## 3     171     284             148     343     330     335     000        
-## 4     165                                                     289        
-## 5                                                             256        
-## 6                                                             310        
-##   locus_10 locus_11
-## 1      000      182
-## 2      371      192
-## 3                  
-## 4                  
-## 5                  
-## 6
-```
+    ##   locus_1 locus_2 locus_3 locus_4 locus_5 locus_6 locus_7 locus_8 locus_9
+    ## 1     155     302     118     142     342     326     322     313     342
+    ## 2     161     296             136     000     301     328     316     326
+    ## 3     171     284             148     343     330     335     000        
+    ## 4     165                                                     289        
+    ## 5                                                             256        
+    ## 6                                                             310        
+    ##   locus_10 locus_11
+    ## 1      000      182
+    ## 2      371      192
+    ## 3                  
+    ## 4                  
+    ## 5                  
+    ## 6
 
-```r
+``` r
 # List MLG
 MLG_tab(data2)
 ```
 
-```
-##    unit_1 unit_2 unit_3
-## 1       1      5       
-## 2       2              
-## 3       3              
-## 4       4              
-## 5       6              
-## 6       7     10     13
-## 7       8              
-## 8       9     17     19
-## 9      11              
-## 10     12              
-## 11     14              
-## 12     15              
-## 13     16              
-## 14     18              
-## 15     20
-```
+    ##    unit_1 unit_2 unit_3
+    ## 1       1      5       
+    ## 2       2              
+    ## 3       3              
+    ## 4       4              
+    ## 5       6              
+    ## 6       7     10     13
+    ## 7       8              
+    ## 8       9     17     19
+    ## 9      11              
+    ## 10     12              
+    ## 11     14              
+    ## 12     15              
+    ## 13     16              
+    ## 14     18              
+    ## 15     20
 
-```r
+``` r
 MLGlist <- MLG_list(data2)
 # Allelic frequencies :
 freq_RR(data2)
 ```
 
-```
-##       locus allele  freq
-## 1   locus_1    155 0.925
-## 2   locus_1    161 0.025
-## 3   locus_1    165 0.025
-## 4   locus_1    171 0.025
-## 5   locus_2    284 0.025
-## 6   locus_2    296 0.050
-## 7   locus_2    302 0.925
-## 8   locus_3    118 1.000
-## 9   locus_4    136 0.025
-## 10  locus_4    142 0.950
-## 11  locus_4    148 0.025
-## 12  locus_5    000 0.050
-## 13  locus_5    342 0.900
-## 14  locus_5    343 0.050
-## 15  locus_6    301 0.025
-## 16  locus_6    326 0.950
-## 17  locus_6    330 0.025
-## 18  locus_7    322 0.700
-## 19  locus_7    328 0.275
-## 20  locus_7    335 0.025
-## 21  locus_8    000 0.050
-## 22  locus_8    256 0.025
-## 23  locus_8    289 0.025
-## 24  locus_8    310 0.025
-## 25  locus_8    313 0.725
-## 26  locus_8    316 0.150
-## 27  locus_9    326 0.050
-## 28  locus_9    342 0.950
-## 29 locus_10    000 0.200
-## 30 locus_10    371 0.800
-## 31 locus_11    182 0.950
-## 32 locus_11    192 0.050
-```
+    ##       locus allele  freq
+    ## 1   locus_1    155 0.925
+    ## 2   locus_1    161 0.025
+    ## 3   locus_1    165 0.025
+    ## 4   locus_1    171 0.025
+    ## 5   locus_2    284 0.025
+    ## 6   locus_2    296 0.050
+    ## 7   locus_2    302 0.925
+    ## 8   locus_3    118 1.000
+    ## 9   locus_4    136 0.025
+    ## 10  locus_4    142 0.950
+    ## 11  locus_4    148 0.025
+    ## 12  locus_5    000 0.050
+    ## 13  locus_5    342 0.900
+    ## 14  locus_5    343 0.050
+    ## 15  locus_6    301 0.025
+    ## 16  locus_6    326 0.950
+    ## 17  locus_6    330 0.025
+    ## 18  locus_7    322 0.700
+    ## 19  locus_7    328 0.275
+    ## 20  locus_7    335 0.025
+    ## 21  locus_8    000 0.050
+    ## 22  locus_8    256 0.025
+    ## 23  locus_8    289 0.025
+    ## 24  locus_8    310 0.025
+    ## 25  locus_8    313 0.725
+    ## 26  locus_8    316 0.150
+    ## 27  locus_9    326 0.050
+    ## 28  locus_9    342 0.950
+    ## 29 locus_10    000 0.200
+    ## 30 locus_10    371 0.800
+    ## 31 locus_11    182 0.950
+    ## 32 locus_11    192 0.050
 
-```r
+``` r
 # OR using poppr
 # Calculating genotypic diversity
 poppr(zyg_SB1) # 20 ramets but only 15 genets (MLG)
 ```
 
-```
-##    Pop  N MLG eMLG SE   H    G lambda   E.5  Hexp    Ia  rbarD    File
-## 1 260P 20  15   15  0 2.6 11.8  0.915 0.867 0.148 0.324 0.0457 zyg_SB1
-```
+    ##    Pop  N MLG eMLG SE   H    G lambda   E.5  Hexp    Ia  rbarD    File
+    ## 1 260P 20  15   15  0 2.6 11.8  0.915 0.867 0.148 0.324 0.0457 zyg_SB1
 
-```r
+``` r
 # Plot the MLG per sampling site
 P.tab <- mlg.table(zyg_SB1)
 ```
 
-![](Complete_workflow_files/figure-html/unnamed-chunk-2-1.png)<!-- -->
+![](Complete_workflow_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
 
-```r
+``` r
 # Determination of MLL
 
 #genetic distances computation, distance on allele differences:
 respop <- genet_dist(data2);respop # max 10 differences between genotypes
 ```
 
-```
-## $distance_matrix
-##     1  2  3  4  5  6  7  8  9 10 11 12 13 14
-## 2   4                                       
-## 3   6  4                                    
-## 4   6  2  2                                 
-## 5   6  5  6  6                              
-## 6   4  2  6  4  6                           
-## 7   4  2  3  3  4  4                        
-## 8   2  2  4  4  4  2  2                     
-## 9   5  6 10  8 10  5  8  7                  
-## 10  3  7  8  9  9  7  7  5  6               
-## 11  7  5  9  7  9  4  7  5  8  9            
-## 12  3  2  4  4  4  3  2  1  7  6  6         
-## 13  3  3  5  5  4  3  3  1  8  6  6  2      
-## 14  5  5  7  7  6  5  5  3 10  8  8  4  2   
-## 15  3  3  5  5  5  3  3  1  8  6  6  2  2  3
-```
+    ## $distance_matrix
+    ##     1  2  3  4  5  6  7  8  9 10 11 12 13 14
+    ## 2   4                                       
+    ## 3   6  4                                    
+    ## 4   6  2  2                                 
+    ## 5   6  5  6  6                              
+    ## 6   4  2  6  4  6                           
+    ## 7   4  2  3  3  4  4                        
+    ## 8   2  2  4  4  4  2  2                     
+    ## 9   5  6 10  8 10  5  8  7                  
+    ## 10  3  7  8  9  9  7  7  5  6               
+    ## 11  7  5  9  7  9  4  7  5  8  9            
+    ## 12  3  2  4  4  4  3  2  1  7  6  6         
+    ## 13  3  3  5  5  4  3  3  1  8  6  6  2      
+    ## 14  5  5  7  7  6  5  5  3 10  8  8  4  2   
+    ## 15  3  3  5  5  5  3  3  1  8  6  6  2  2  3
 
-```r
+``` r
 ressim <- genet_dist_sim(data2, nbrepeat = 1000) #theoretical distribution : sexual reproduction
 ```
 
-```
-## [1] "Number of MLG sim = 240"
-```
+    ## [1] "Number of MLG sim = 233"
 
-```r
+``` r
 ressimWS <- genet_dist_sim(data2, genet = TRUE, nbrepeat = 1000) #idem, without selfing
 ```
 
-```
-## [1] "Number of MLG sim = 312"
-```
+    ## [1] "Number of MLG sim = 291"
 
-```r
+``` r
 #graph prep.:
 p1 <- hist(respop$distance_matrix, freq = FALSE, col = rgb(0,0.4,1,1), main = "popsim", 
            xlab = "Genetic distances", breaks = seq(0, max(respop$distance_matrix)+1, 1))
 ```
 
-![](Complete_workflow_files/figure-html/unnamed-chunk-2-2.png)<!-- -->
+![](Complete_workflow_files/figure-gfm/unnamed-chunk-2-2.png)<!-- -->
 
-```r
+``` r
 p2 <- hist(ressim$distance_matrix, freq = FALSE, col = rgb(0.7,0.9,1,0.5), main = "popSR",
            xlab = "Genetic distances", breaks = seq(0, max(ressim$distance_matrix)+1, 1))
 ```
 
-![](Complete_workflow_files/figure-html/unnamed-chunk-2-3.png)<!-- -->
+![](Complete_workflow_files/figure-gfm/unnamed-chunk-2-3.png)<!-- -->
 
-```r
+``` r
 p3 <- hist(ressimWS$distance_matrix, freq = FALSE, col = rgb(0.9,0.5,1,0.3),
            main = "popSRWS", xlab = "Genetic distances", breaks = seq(0, max(ressimWS$distance_matrix)+1, 1))
 ```
 
-![](Complete_workflow_files/figure-html/unnamed-chunk-2-4.png)<!-- -->
+![](Complete_workflow_files/figure-gfm/unnamed-chunk-2-4.png)<!-- -->
 
-```r
+``` r
 limx <- max(max(respop$distance_matrix), max(ressim$distance_matrix), max(ressimWS$distance_matrix))
 
 #graph superposition:
@@ -405,21 +360,19 @@ col <- c(rgb(0,0.4,1,1), rgb(0.7,0.9,1,0.5), rgb(0.9,0.5,1,0.3))
 legend("top", fill = col, leg.txt, plot = TRUE, bty = "o", box.lwd = 1.5, bg = "white")
 ```
 
-![](Complete_workflow_files/figure-html/unnamed-chunk-2-5.png)<!-- -->
+![](Complete_workflow_files/figure-gfm/unnamed-chunk-2-5.png)<!-- -->
 
-```r
+``` r
 #determining alpha2 (= highest genetic distance (i.e. max number of differences) between genotypes that we condider for MLL)
 # Can be determined graphically (cutoff) or by looking directly at the data :
 table(respop$distance_matrix)
 ```
 
-```
-## 
-##  1  2  3  4  5  6  7  8  9 10 
-##  3 14 15 16 15 16 10  8  5  3
-```
+    ## 
+    ##  1  2  3  4  5  6  7  8  9 10 
+    ##  3 14 15 16 15 16 10  8  5  3
 
-```r
+``` r
 # No MLL here --> keep MLG (i.e. alpha2 = 0)
 
 MLLlist <- MLL_generator(data2, alpha2 = 0) # Change alpha2 value
@@ -430,98 +383,90 @@ MLLlist <- MLL_generator(data2, alpha2 = 0) # Change alpha2 value
 MLLlist
 ```
 
-```
-## [[1]]
-## [1] 1 5
-## 
-## [[2]]
-## [1] 2
-## 
-## [[3]]
-## [1] 3
-## 
-## [[4]]
-## [1] 4
-## 
-## [[5]]
-## [1] 6
-## 
-## [[6]]
-## [1]  7 10 13
-## 
-## [[7]]
-## [1] 8
-## 
-## [[8]]
-## [1]  9 17 19
-## 
-## [[9]]
-## [1] 11
-## 
-## [[10]]
-## [1] 12
-## 
-## [[11]]
-## [1] 14
-## 
-## [[12]]
-## [1] 15
-## 
-## [[13]]
-## [1] 16
-## 
-## [[14]]
-## [1] 18
-## 
-## [[15]]
-## [1] 20
-```
+    ## [[1]]
+    ## [1] 1 5
+    ## 
+    ## [[2]]
+    ## [1] 2
+    ## 
+    ## [[3]]
+    ## [1] 3
+    ## 
+    ## [[4]]
+    ## [1] 4
+    ## 
+    ## [[5]]
+    ## [1] 6
+    ## 
+    ## [[6]]
+    ## [1]  7 10 13
+    ## 
+    ## [[7]]
+    ## [1] 8
+    ## 
+    ## [[8]]
+    ## [1]  9 17 19
+    ## 
+    ## [[9]]
+    ## [1] 11
+    ## 
+    ## [[10]]
+    ## [1] 12
+    ## 
+    ## [[11]]
+    ## [1] 14
+    ## 
+    ## [[12]]
+    ## [1] 15
+    ## 
+    ## [[13]]
+    ## [1] 16
+    ## 
+    ## [[14]]
+    ## [1] 18
+    ## 
+    ## [[15]]
+    ## [1] 20
 
-```r
+``` r
 # Extract one individual from each MLL 
 new_ind <- sapply(MLLlist, `[[`, 1)
 new_ind <- as.numeric(new_ind);new_ind
 ```
 
-```
-##  [1]  1  2  3  4  6  7  8  9 11 12 14 15 16 18 20
-```
+    ##  [1]  1  2  3  4  6  7  8  9 11 12 14 15 16 18 20
 
-```r
+``` r
 rownames(zyg_SB1@tab)<-c(1:20) # if ids are not set to 1,2,3,...n
 selected_indices <- match(new_ind, rownames(zyg_SB1@tab));selected_indices
 ```
 
-```
-##  [1]  1  2  3  4  6  7  8  9 11 12 14 15 16 18 20
-```
+    ##  [1]  1  2  3  4  6  7  8  9 11 12 14 15 16 18 20
 
-```r
+``` r
 # Create a new genind object without the clonal individuals
 data_noclones <- zyg_SB1[selected_indices, ]
 # Check if the genind object is correct
 data_noclones
 ```
 
-```
-## /// GENIND OBJECT /////////
-## 
-##  // 15 individuals; 11 loci; 29 alleles; size: 14.2 Kb
-## 
-##  // Basic content
-##    @tab:  15 x 29 matrix of allele counts
-##    @loc.n.all: number of alleles per locus (range: 1-5)
-##    @loc.fac: locus factor for the 29 columns of @tab
-##    @all.names: list of allele names for each locus
-##    @ploidy: ploidy of each individual  (range: 2-2)
-##    @type:  codom
-##    @call: .local(x = x, i = i, j = j, drop = drop)
-## 
-##  // Optional content
-##    @pop: population of each individual (group size range: 15-15)
-```
+    ## /// GENIND OBJECT /////////
+    ## 
+    ##  // 15 individuals; 11 loci; 29 alleles; size: 14.2 Kb
+    ## 
+    ##  // Basic content
+    ##    @tab:  15 x 29 matrix of allele counts
+    ##    @loc.n.all: number of alleles per locus (range: 1-5)
+    ##    @loc.fac: locus factor for the 29 columns of @tab
+    ##    @all.names: list of allele names for each locus
+    ##    @ploidy: ploidy of each individual  (range: 2-2)
+    ##    @type:  codom
+    ##    @call: .local(x = x, i = i, j = j, drop = drop)
+    ## 
+    ##  // Optional content
+    ##    @pop: population of each individual (group size range: 15-15)
 
-```r
+``` r
 # When it's ok --> make this new genind the main genind object
 zyg_SB1 <- data_noclones
 
@@ -533,12 +478,9 @@ zyg_SB1 <- data_noclones
 genind_to_genepop(zyg_SB1, output = here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", "comparison", "zyg_SB1_correct.txt"))
 ```
 
-```
-## There is only one population in your dataset
-```
+    ## There is only one population in your dataset
 
-
-```r
+``` r
 # ==> Use the same code for SB2
 # As only 11 loci were kept for SB1 and for the haploid dataset, we also keep the same 11 loci for SB2
 locNames(zyg_SB2)
@@ -557,8 +499,7 @@ The same workflow is used here on the haploid dataset. Once the dataset
 is filtered, the duplication is processed using the GenAlEx programme
 implemented in Excel.
 
-
-```r
+``` r
 # SB1
 haplo_SB1 <- read.genalex(here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", "haploid_data", 
                           "SB1.csv"), ploidy = 1, genclone = FALSE, sep = ";")
@@ -626,13 +567,12 @@ dup_SB1
 
 As described in the methods, the second method used to deal with haploid
 data consisted of pairing randomly haploid genotypes to create diploids.
-Warning : this method is called "combined" or "combination" in this
-scripts but refers to the "pairing" method described in the methods.
-Here the same haploid datasets (SB1 & SB2) as for the "duplication
-method" are used.
+Warning : this method is called “combined” or “combination” in this
+scripts but refers to the “pairing” method described in the methods.
+Here the same haploid datasets (SB1 & SB2) as for the “duplication
+method” are used.
 
-
-```r
+``` r
 # SB1
 haplo_SB1
 # Sample at random 18 (or 12) individuals from the 19 (we need an even number !)
@@ -668,13 +608,12 @@ comb_SB1
 ### Bias identification : Comparison of the 3 methods
 
 In order to have enough samples and because the structure analysis
-showed no strong structure between sites SB1 and SB2, we'll combine the
+showed no strong structure between sites SB1 and SB2, we’ll combine the
 two sites in one.
 
 Datasets used for the analysis :
 
-
-```r
+``` r
 # Zygotes data (n=24)
 zyg<-read.genepop(here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", "comparison", 
                            "zygotes_SB_1pop.gen"), ncode = 3L, quiet = TRUE)
@@ -693,15 +632,14 @@ comb
 
 The statistical plan is the following :
 
--   1 observation = 1 Ne estimation (+ Jackknife CI)
--   1 variable = Ne
--   3 factors : zyg, dup, comb
--   10 replicates for each factor --\> subsample each group 10 times
-    (sample 10 individuals without replacement), except for the
-    "duplicated data", were we sample 20 individuals.
+- 1 observation = 1 Ne estimation (+ Jackknife CI)
+- 1 variable = Ne
+- 3 factors : zyg, dup, comb
+- 10 replicates for each factor –\> subsample each group 10 times
+  (sample 10 individuals without replacement), except for the
+  “duplicated data”, were we sample 20 individuals.
 
-
-```r
+``` r
 # Individuals sampling
 
 output.dir <- here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", "comparison", "Replicates_duplicated_new", "Tub")
@@ -745,8 +683,7 @@ For these 3 methods, the allelic richness, the expected heterozygosity
 (He) and the inbreeding coefficient (Fis) are calculated across the 10
 replicates.
 
-
-```r
+``` r
 # get back the 10 replicates of each group
 input_dir <- here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", "comparison", "Replicates_zygotes")
 
@@ -836,15 +773,14 @@ replicates of each group (zygotes, duplicated, combined).
 
 ## Effect of clonality on Ne estimation
 
-Dataset used : *Boletus edulis* from Hoffman et al. 2020
+Dataset used : *Boletus edulis* from Hoffman et al. 2020
 
 In this part, we are looking for an effect of the presence of clones in
 a genetic dataset on the estimation of Ne.
 
 ### Filtering step
 
-
-```r
+``` r
 # Original dataset
 data <- read.genepop(here("Data", "Data_processed", "Boletus_edulis_Hoffman2020","Boletus_edulis.gen"), ncode = 2L, quiet = TRUE) 
 
@@ -911,14 +847,13 @@ poppr(Pop3)
 The goal is to compare the estimations of Ne for 5 types of populations
 :
 
--   complete (no correction),
--   without big clones (\>= 7),
--   without big and medium clones (\>= 3),
--   without any clones (MLG),
--   without any similar MLL.
+- complete (no correction),
+- without big clones (\>= 7),
+- without big and medium clones (\>= 3),
+- without any clones (MLG),
+- without any similar MLL.
 
-
-```r
+``` r
 # Using Rclone to visualise clones in our Population
 # Plot
 P.tab <- mlg.table(Pop1)
@@ -1030,8 +965,7 @@ Now that we have these 5 datasets, with respectively 60, 41, 33, 31 and
 random sampling with n = 25 is realised in each dataset, with 10
 replicates.
 
-
-```r
+``` r
 # Individuals sampling
 
 output.dir <- here("Data", "Data_processed", "Boletus_edulis_Hoffman2020", "n25_samples", "Replicates_noMLL", "Bol")
@@ -1073,8 +1007,7 @@ Then Ne is estimated in NeEstimator for the 10 replicates of each
 treatment. The results are analysed with statistical tests to assess
 significant differences between treatments.
 
-
-```r
+``` r
 # Compare Ne estimations
 
 # Data (table containing Ne results for 10 replicates * 5 treatments)
@@ -1094,9 +1027,9 @@ boxplot(Ne.~Corr, data = data, main = "Ne estimation as a function of the propor
         xlab = "Clone correction", ylab = "^Ne")
 ```
 
-![](Complete_workflow_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
+![](Complete_workflow_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
-```r
+``` r
 # Statistical tests
 
 # 1-way ANOVA
@@ -1105,12 +1038,10 @@ boxplot(Ne.~Corr, data = data, main = "Ne estimation as a function of the propor
 tapply(data$Ne.,data$Corr,length)
 ```
 
-```
-##  nocorr nolarge   nomed   nomlg   nomll 
-##      10      10      10      10      10
-```
+    ##  nocorr nolarge   nomed   nomlg   nomll 
+    ##      10      10      10      10      10
 
-```r
+``` r
 # Balanced plan with 1 fixed factor
 
 # Application conditions verification
@@ -1120,140 +1051,121 @@ x11();par(mfrow=c(2,2)); plot(AN) #graphically
 shapiro.test(AN$res)# Normality
 ```
 
-```
-## 
-## 	Shapiro-Wilk normality test
-## 
-## data:  AN$res
-## W = 0.95983, p-value = 0.08748
-```
+    ## 
+    ##  Shapiro-Wilk normality test
+    ## 
+    ## data:  AN$res
+    ## W = 0.95983, p-value = 0.08748
 
-```r
+``` r
 leveneTest(AN)# Levene Test
 ```
 
-```
-## Warning in leveneTest.default(y = y, group = group, ...): group coerced to
-## factor.
-```
+    ## Warning in leveneTest.default(y = y, group = group, ...): group coerced to
+    ## factor.
 
-```
-## Levene's Test for Homogeneity of Variance (center = median)
-##       Df F value Pr(>F)
-## group  4  1.5533 0.2032
-##       45
-```
+    ## Levene's Test for Homogeneity of Variance (center = median)
+    ##       Df F value Pr(>F)
+    ## group  4  1.5533 0.2032
+    ##       45
 
-```r
+``` r
 dwtest(AN) # Independence
 ```
 
-```
-## 
-## 	Durbin-Watson test
-## 
-## data:  AN
-## DW = 2.387, p-value = 0.7935
-## alternative hypothesis: true autocorrelation is greater than 0
-```
+    ## 
+    ##  Durbin-Watson test
+    ## 
+    ## data:  AN
+    ## DW = 2.387, p-value = 0.7935
+    ## alternative hypothesis: true autocorrelation is greater than 0
 
-```r
+``` r
 # Search for influent points
 data$residus<-AN$res
 grubbs.test(AN$res, type = 10, opposite = FALSE, two.sided = FALSE)# No significant outlier
 ```
 
-```
-## 
-## 	Grubbs test for one outlier
-## 
-## data:  AN$res
-## G.19 = 2.96801, U = 0.81655, p-value = 0.04789
-## alternative hypothesis: highest value 7.23 is an outlier
-```
+    ## 
+    ##  Grubbs test for one outlier
+    ## 
+    ## data:  AN$res
+    ## G.19 = 2.96801, U = 0.81655, p-value = 0.04789
+    ## alternative hypothesis: highest value 7.23 is an outlier
 
-```r
+``` r
 # Application conditions met --> we can do an ANOVA
 anova(AN)
 ```
 
-```
-## Analysis of Variance Table
-## 
-## Response: Ne.
-##           Df Sum Sq Mean Sq F value    Pr(>F)    
-## Corr       4 600.94 150.235  23.251 1.812e-10 ***
-## Residuals 45 290.76   6.461                      
-## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-```
+    ## Analysis of Variance Table
+    ## 
+    ## Response: Ne.
+    ##           Df Sum Sq Mean Sq F value    Pr(>F)    
+    ## Corr       4 600.94 150.235  23.251 1.812e-10 ***
+    ## Residuals 45 290.76   6.461                      
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
-```r
+``` r
 summary(AN)
 ```
 
-```
-## 
-## Call:
-## lm(formula = Ne. ~ Corr, data = data)
-## 
-## Residuals:
-##    Min     1Q Median     3Q    Max 
-## -4.590 -1.585 -0.410  1.385  7.230 
-## 
-## Coefficients:
-##             Estimate Std. Error t value Pr(>|t|)    
-## (Intercept)   2.6300     0.8038   3.272 0.002056 ** 
-## Corrnolarge   1.7400     1.1368   1.531 0.132862    
-## Corrnomed     4.3200     1.1368   3.800 0.000432 ***
-## Corrnomlg     6.8600     1.1368   6.035 2.77e-07 ***
-## Corrnomll     9.6600     1.1368   8.498 6.58e-11 ***
-## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-## 
-## Residual standard error: 2.542 on 45 degrees of freedom
-## Multiple R-squared:  0.6739,	Adjusted R-squared:  0.6449 
-## F-statistic: 23.25 on 4 and 45 DF,  p-value: 1.812e-10
-```
+    ## 
+    ## Call:
+    ## lm(formula = Ne. ~ Corr, data = data)
+    ## 
+    ## Residuals:
+    ##    Min     1Q Median     3Q    Max 
+    ## -4.590 -1.585 -0.410  1.385  7.230 
+    ## 
+    ## Coefficients:
+    ##             Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)   2.6300     0.8038   3.272 0.002056 ** 
+    ## Corrnolarge   1.7400     1.1368   1.531 0.132862    
+    ## Corrnomed     4.3200     1.1368   3.800 0.000432 ***
+    ## Corrnomlg     6.8600     1.1368   6.035 2.77e-07 ***
+    ## Corrnomll     9.6600     1.1368   8.498 6.58e-11 ***
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 2.542 on 45 degrees of freedom
+    ## Multiple R-squared:  0.6739, Adjusted R-squared:  0.6449 
+    ## F-statistic: 23.25 on 4 and 45 DF,  p-value: 1.812e-10
 
-```r
+``` r
 # Post hoc test : Tukey (balanced plan)
 TUKEY<-TukeyHSD(aov(Ne.~Corr,data));TUKEY
 ```
 
-```
-##   Tukey multiple comparisons of means
-##     95% family-wise confidence level
-## 
-## Fit: aov(formula = Ne. ~ Corr, data = data)
-## 
-## $Corr
-##                diff        lwr       upr     p adj
-## nolarge-nocorr 1.74 -1.4901286  4.970129 0.5485533
-## nomed-nocorr   4.32  1.0898714  7.550129 0.0037695
-## nomlg-nocorr   6.86  3.6298714 10.090129 0.0000027
-## nomll-nocorr   9.66  6.4298714 12.890129 0.0000000
-## nomed-nolarge  2.58 -0.6501286  5.810129 0.1738193
-## nomlg-nolarge  5.12  1.8898714  8.350129 0.0004340
-## nomll-nolarge  7.92  4.6898714 11.150129 0.0000001
-## nomlg-nomed    2.54 -0.6901286  5.770129 0.1859471
-## nomll-nomed    5.34  2.1098714  8.570129 0.0002334
-## nomll-nomlg    2.80 -0.4301286  6.030129 0.1175543
-```
+    ##   Tukey multiple comparisons of means
+    ##     95% family-wise confidence level
+    ## 
+    ## Fit: aov(formula = Ne. ~ Corr, data = data)
+    ## 
+    ## $Corr
+    ##                diff        lwr       upr     p adj
+    ## nolarge-nocorr 1.74 -1.4901286  4.970129 0.5485533
+    ## nomed-nocorr   4.32  1.0898714  7.550129 0.0037695
+    ## nomlg-nocorr   6.86  3.6298714 10.090129 0.0000027
+    ## nomll-nocorr   9.66  6.4298714 12.890129 0.0000000
+    ## nomed-nolarge  2.58 -0.6501286  5.810129 0.1738193
+    ## nomlg-nolarge  5.12  1.8898714  8.350129 0.0004340
+    ## nomll-nolarge  7.92  4.6898714 11.150129 0.0000001
+    ## nomlg-nomed    2.54 -0.6901286  5.770129 0.1859471
+    ## nomll-nomed    5.34  2.1098714  8.570129 0.0002334
+    ## nomll-nomlg    2.80 -0.4301286  6.030129 0.1175543
 
-```r
+``` r
 letters <- multcompLetters(TUKEY$`Corr`[,4]);letters
 ```
 
-```
-## nolarge   nomed   nomlg   nomll  nocorr 
-##    "ab"    "ac"    "cd"     "d"     "b"
-```
+    ## nolarge   nomed   nomlg   nomll  nocorr 
+    ##    "ab"    "ac"    "cd"     "d"     "b"
 
 The results were plotted using the ggplot2 package.
 
-
-```r
+``` r
 # Define the order of factors
 data$condition <- factor(data$Corr, levels = c("nocorr", "nolarge", "nomed", "nomlg", "nomll"))
 
@@ -1284,11 +1196,11 @@ fig2 <- ggplot(data, aes(x = condition, y = Ne., fill = condition)) +
 fig2
 ```
 
-![](Complete_workflow_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
+![](Complete_workflow_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 ## Effect of genetic structure on Ne estimation
 
-Dataset used : *Suillus brevipes* from Branco et al. 2017.
+Dataset used : *Suillus brevipes* from Branco et al. 2017.
 
 In this dataset, filtering steps including missing data management,
 clonal correction and structure analysis had already been done by the
@@ -1302,15 +1214,14 @@ individuals (n=12) and creating 10 replicates of 2K SNPs samples.
 In the following, abbreviations correspond to the following populations
 :
 
--   cal = California
--   nocal = Inland (all except California)
--   mocal = Mountain California
--   cocal = Coastal California
--   wycol = Wyoming + Colorado
--   minwhi = Minnesota + Canada (Whitecourt)
+- cal = California
+- nocal = Inland (all except California)
+- mocal = Mountain California
+- cocal = Coastal California
+- wycol = Wyoming + Colorado
+- minwhi = Minnesota + Canada (Whitecourt)
 
-
-```bash
+``` bash
 cd /usr/local/bioinfo/src
 module load bioinfo/tabix-0.2.5
 module load bioinfo/vcftools-0.1.16
@@ -1478,7 +1389,6 @@ done
 for i in {1..10}; do
 vcftools --vcf wycol20.12.recode.vcf --positions ./snplist/wycol.subset2K$i.snps --recode --out ./data/wycol2K.$i
 done
-
 ```
 
 Once all datasets are created (in VCF format), they are converted into
@@ -1487,11 +1397,11 @@ estimated using these new files in NeEstimator.
 
 ## Effect of pseudo-replication on Ne estimation
 
-Datasets used : *Suillus brevipes* from Branco et al. 2017 and *Suillus
-luteus* from Bazzicalupo et al. 2020.
+Datasets used : *Suillus brevipes* from Branco et al. 2017 and *Suillus
+luteus* from Bazzicalupo et al. 2020.
 
 In these two species genotyped with SNPs, we compare Ne estimations from
-datasets containing large VS small datasets, i.e. containing 20,000 SNPs
+datasets containing large VS small datasets, i.e. containing 20,000 SNPs
 VS 2,000 SNPs.
 
 ### *Suillus brevipes*
@@ -1503,8 +1413,7 @@ from the original dataset.
 
 #### 2K SNPs subsets
 
-
-```bash
+``` bash
 # Sample 10 replicates of 2 000 SNPs in each pop in order to compare estimations together.
 # We have to start with the original dataset ("XXX.recode.vcf") and sampling 12 individuals in each population.
 
@@ -1663,13 +1572,11 @@ done
 for i in {1..10}; do
 vcftools --vcf wycol.12.recode.vcf --positions ./snplist2/wycol.subset2K$i.snps --recode --out ./data/wycol2K.$i
 done
-
 ```
 
 #### 20K SNPs subsets
 
-
-```bash
+``` bash
 # From the same lists, we subsample 20000 SNPs randomly using "shuffle = shuf"
 # For each of the individual groups, we create 10 smaller subsets of SNPs:
 
@@ -1787,7 +1694,6 @@ done
 for i in {1..10}; do
 vcftools --vcf wycol.12.recode.vcf --positions ./snplist2/wycol.subset20K$i.snps --recode --out ./data/wycol20K.$i
 done
-
 ```
 
 #### Ne estimation
@@ -1798,11 +1704,10 @@ estimated using these new files in NeEstimator.
 
 We want to compare 2 means : mean Ne for 20 000 SNPs and mean Ne for 2
 000 SNPs. As we have sampled SNPs randomly from the same pool of SNPs,
-the samples are not independent. Then, we'll use a Wilcoxon test for
+the samples are not independent. Then, we’ll use a Wilcoxon test for
 paired samples (non parametric).
 
-
-```r
+``` r
 # Data
 data <- read.csv(here("Outputs", "Brief_results", "pseudorep_Suillus", "Report_analysis", "Suillus_pseudorep_new.csv"), 
                  header = TRUE, sep = ";", dec = ",")
@@ -1821,30 +1726,27 @@ boxplot(Ne.~Nbr_SNPs, data = all, main = "Ne estimation from 20K SNPs and 2K SNP
         xlab = "Number of SNPs", ylab = "^Ne")
 ```
 
-![](Complete_workflow_files/figure-html/unnamed-chunk-17-1.png)<!-- -->
+![](Complete_workflow_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
 
-```r
+``` r
 # Wilcoxon test
 wilcox.test(Ne.~Nbr_SNPs, data = all, paired=TRUE, alternative="less")
 ```
 
-```
-## 
-## 	Wilcoxon signed rank exact test
-## 
-## data:  Ne. by Nbr_SNPs
-## V = 0, p-value = 0.0009766
-## alternative hypothesis: true location shift is less than 0
-```
+    ## 
+    ##  Wilcoxon signed rank exact test
+    ## 
+    ## data:  Ne. by Nbr_SNPs
+    ## V = 0, p-value = 0.0009766
+    ## alternative hypothesis: true location shift is less than 0
 
-```r
+``` r
 # Do boxplots and tests for each population by changing data = "..."
 ```
 
 We can represent the results in a barplot.
 
-
-```r
+``` r
 # Define palette
 palette_Suillus <- c("#5DA5DA", "#059748")
 
@@ -1936,7 +1838,7 @@ fig <- ggplot(data, aes(x = condition, y = Ne., fill = Nbr_SNPs)) +
 fig
 ```
 
-![](Complete_workflow_files/figure-html/unnamed-chunk-18-1.png)<!-- -->
+![](Complete_workflow_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
 ### *Suillus luteus*
 
@@ -1947,8 +1849,7 @@ SNPs from the original dataset.
 
 #### 2K SNPs subsets
 
-
-```bash
+``` bash
 # checking missing data first:
 vcftools --vcf gvcf.filtered.2020-05-23dik.recode.vcf --remove-indels --max-missing 0.8 --recode --out Sui_lut
 
@@ -1990,13 +1891,11 @@ done
 for i in {1..10}; do
 vcftools --vcf Sui_lut.recode.vcf --positions ./snplist/Sui_lut.subset2K$i.snps --recode --out ./data/Sui_lut2K.$i
 done
-
 ```
 
 #### 2K SNPs subsets
 
-
-```bash
+``` bash
 ## Let's do the same for 20K SNPs subsets
 
 # From these lists, we subsample 20000 SNPs randomly using "shuffle = shuf"
@@ -2024,7 +1923,6 @@ done
 for i in {1..10}; do
 vcftools --vcf Sui_lut.recode.vcf --positions ./snplist/Sui_lut.subset20K$i.snps --recode --out ./data/Sui_lut20K.$i
 done
-
 ```
 
 #### Ne estimation
@@ -2035,11 +1933,10 @@ estimated using these new files in NeEstimator.
 
 We want to compare 2 means : mean Ne for 20 000 SNPs and mean Ne for 2
 000 SNPs. As we have sampled SNPs randomly from the same pool of SNPs,
-the samples are not independent. Then, we'll use a Wilcoxon test for
+the samples are not independent. Then, we’ll use a Wilcoxon test for
 paired samples (non parametric).
 
-
-```r
+``` r
 # Data
 data <- read.csv(here("Outputs", "Brief_results", "pseudorep_Suillus", "Report_analysis", "Pseudorep_Sui_lut.csv"), 
                  header = TRUE, sep = ";", dec = ",")
@@ -2051,26 +1948,24 @@ boxplot(Ne.~Nbr_SNPs, data = data, main = "Ne estimation from 20K SNPs and 2K SN
         xlab = "Number of SNPs", ylab = "^Ne")
 ```
 
-![](Complete_workflow_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
+![](Complete_workflow_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
-```r
+``` r
 # Wilcoxon test
 wilcox.test(Ne.~Nbr_SNPs, data = data, paired=TRUE, alternative="less")
 ```
 
-```
-## 
-## 	Wilcoxon signed rank exact test
-## 
-## data:  Ne. by Nbr_SNPs
-## V = 0, p-value = 0.0009766
-## alternative hypothesis: true location shift is less than 0
-```
+    ## 
+    ##  Wilcoxon signed rank exact test
+    ## 
+    ## data:  Ne. by Nbr_SNPs
+    ## V = 0, p-value = 0.0009766
+    ## alternative hypothesis: true location shift is less than 0
 
-We can represent the results using a boxplot, but it's not really relevant.
+We can represent the results using a boxplot, but it’s not really
+relevant.
 
-
-```r
+``` r
 # Define palette
 palette_Suillus <- c("#5DA5DA", "#059748")
 
@@ -2107,8 +2002,7 @@ fig_test
 The two species are presented side by side in the report, here is the
 code to generate Figure 4.
 
-
-```r
+``` r
 data <- read.csv(here("Outputs", "Brief_results", "pseudorep_Suillus", "Report_analysis", "Two_Suillus.csv"), 
                  header = TRUE, sep = ";", dec = ",")
 
@@ -2206,9 +2100,9 @@ fig1 <- ggplot(brevipes, aes(x = condition, y = Ne., fill = Nbr_SNPs)) +
 fig1
 ```
 
-![](Complete_workflow_files/figure-html/unnamed-chunk-23-1.png)<!-- -->
+![](Complete_workflow_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
-```r
+``` r
 # Plot 2 : Suillus luteus
 
 fig2 <- ggplot(luteus, aes(x = Pop, y = Ne., fill = Nbr_SNPs)) +
@@ -2242,10 +2136,10 @@ fig2 <- ggplot(luteus, aes(x = Pop, y = Ne., fill = Nbr_SNPs)) +
 fig2
 ```
 
-![](Complete_workflow_files/figure-html/unnamed-chunk-23-2.png)<!-- -->
+![](Complete_workflow_files/figure-gfm/unnamed-chunk-23-2.png)<!-- -->
 
-```r
+``` r
 Figure_4 <- grid.arrange(fig1, fig2, nrow = 1, ncol = 2, widths = 2:1)
 ```
 
-![](Complete_workflow_files/figure-html/unnamed-chunk-23-3.png)<!-- -->
+![](Complete_workflow_files/figure-gfm/unnamed-chunk-23-3.png)<!-- -->
