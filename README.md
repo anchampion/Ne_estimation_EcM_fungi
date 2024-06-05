@@ -1,6 +1,3 @@
-# Ne_estimation_EcM_fungi
- Code and Workflow - M2 Internship
-
 Analyses for Ne estimation in ectomycorrhizal fungi
 ================
 Anouck Champion
@@ -14,6 +11,48 @@ and microsatellite data, and an analysis part dedicated to the
 identification of bias in Ne estimation.
 
 ## Packages loading
+
+Rmarkdown packages
+
+``` r
+library(rmarkdown)
+library(knitr)
+library(here)
+```
+
+General packages
+
+``` r
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(tidyverse)
+library(ade4)
+library(devtools)
+library(rowr)
+library(reshape2)
+library(sjmisc)
+library(tidyselect)
+library(DescTools)
+library(gridExtra)
+library(car)
+library(lmtest)
+library(outliers)
+library(multcompView)
+```
+
+Population genetics packages
+
+``` r
+library(poppr)
+library(adegenet)
+library(graph4lg)
+library(LEA)
+library(vcfR)
+library(pegas)
+library(RClone)
+library(hierfstat)
+```
 
 ## Effect of ploidy on Ne estimations
 
@@ -43,23 +82,26 @@ locations in one population.
 ``` r
 data<-read.genepop(here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", "zygotes", 
                         "zygotes_all_noclones.gen"), ncode = 3L, quiet = TRUE)
+```
 
-# Clones were already removed from this dataset, so we move to structure
+Clones were already removed from this dataset, so we move to structure
+
+``` r
 # Assessing structure using DAPC from the adegenet package
 data
 data@pop
 dapc0 <- dapc(data, n.pca = 5)
 scatter(dapc0)
-# We will use only the SB1 and SB2 sites, and consider them as 1 homogenous population, with regard to DAPC
 ```
 
-Then, starting from the original dataset. This is an example for SB1,
-but the same code was used for SB2.
+We will use only the SB1 and SB2 sites, and consider them as 1
+homogenous population, with regard to DAPC. Then, we start from the
+original dataset. This is an example for SB1, but the same code was used
+for SB2.
 
 ``` r
 # SB1
-zyg_SB1<-read.genepop(here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", "zygotes", 
-                        "zygotes_SB1.gen"), ncode = 3L, quiet = TRUE)
+zyg_SB1<-read.genepop(here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", "zygotes", "zygotes_SB1.gen"), ncode = 3L, quiet = TRUE)
 zyg_SB1
 ```
 
@@ -80,8 +122,9 @@ zyg_SB1
     ##  // Optional content
     ##    @pop: population of each individual (group size range: 20-20)
 
+Filtering for missing data (with *poppr*)
+
 ``` r
-# Missing data ? (with poppr package)
 missing.loc<-missingno(zyg_SB1, type = "loci", cutoff = 0.20);missing.loc
 ```
 
@@ -151,9 +194,10 @@ zyg_SB1<-missing.ind;zyg_SB1
     ##  // Optional content
     ##    @pop: population of each individual (group size range: 20-20)
 
-``` r
-# Clones ? (with Rclone method)
+Filtering for clones (with *Rclone*). First, data must be reformated to
+fit the Rclone format.
 
+``` r
 # Reformat the data for Rclone
 data.df <- genind2df(zyg_SB1)
 popvec <- data.df[,1] # pop info (if present)
@@ -192,8 +236,11 @@ write.table(data2,
             file = here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", "zygotes","SB1_Rclone.txt"),
             row.names = FALSE,
             sep = "\t")
+```
 
-# Discrimination of MLG
+Determination of MLGs
+
+``` r
 # List unique alleles per locus
 list_all_tab(data2)
 ```
@@ -275,25 +322,9 @@ freq_RR(data2)
     ## 31 locus_11    182 0.950
     ## 32 locus_11    192 0.050
 
-``` r
-# OR using poppr
-# Calculating genotypic diversity
-poppr(zyg_SB1) # 20 ramets but only 15 genets (MLG)
-```
-
-    ##    Pop  N MLG eMLG SE   H    G lambda   E.5  Hexp    Ia  rbarD    File
-    ## 1 260P 20  15   15  0 2.6 11.8  0.915 0.867 0.148 0.324 0.0457 zyg_SB1
+Determination of MLLs
 
 ``` r
-# Plot the MLG per sampling site
-P.tab <- mlg.table(zyg_SB1)
-```
-
-![](Complete_workflow_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
-
-``` r
-# Determination of MLL
-
 #genetic distances computation, distance on allele differences:
 respop <- genet_dist(data2);respop # max 10 differences between genotypes
 ```
@@ -319,13 +350,13 @@ respop <- genet_dist(data2);respop # max 10 differences between genotypes
 ressim <- genet_dist_sim(data2, nbrepeat = 1000) #theoretical distribution : sexual reproduction
 ```
 
-    ## [1] "Number of MLG sim = 233"
+    ## [1] "Number of MLG sim = 238"
 
 ``` r
 ressimWS <- genet_dist_sim(data2, genet = TRUE, nbrepeat = 1000) #idem, without selfing
 ```
 
-    ## [1] "Number of MLG sim = 291"
+    ## [1] "Number of MLG sim = 286"
 
 ``` r
 #graph prep.:
@@ -333,21 +364,21 @@ p1 <- hist(respop$distance_matrix, freq = FALSE, col = rgb(0,0.4,1,1), main = "p
            xlab = "Genetic distances", breaks = seq(0, max(respop$distance_matrix)+1, 1))
 ```
 
-![](Complete_workflow_files/figure-gfm/unnamed-chunk-2-2.png)<!-- -->
+![](Complete_workflow_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 ``` r
 p2 <- hist(ressim$distance_matrix, freq = FALSE, col = rgb(0.7,0.9,1,0.5), main = "popSR",
            xlab = "Genetic distances", breaks = seq(0, max(ressim$distance_matrix)+1, 1))
 ```
 
-![](Complete_workflow_files/figure-gfm/unnamed-chunk-2-3.png)<!-- -->
+![](Complete_workflow_files/figure-gfm/unnamed-chunk-7-2.png)<!-- -->
 
 ``` r
 p3 <- hist(ressimWS$distance_matrix, freq = FALSE, col = rgb(0.9,0.5,1,0.3),
            main = "popSRWS", xlab = "Genetic distances", breaks = seq(0, max(ressimWS$distance_matrix)+1, 1))
 ```
 
-![](Complete_workflow_files/figure-gfm/unnamed-chunk-2-4.png)<!-- -->
+![](Complete_workflow_files/figure-gfm/unnamed-chunk-7-3.png)<!-- -->
 
 ``` r
 limx <- max(max(respop$distance_matrix), max(ressim$distance_matrix), max(ressimWS$distance_matrix))
@@ -363,7 +394,7 @@ col <- c(rgb(0,0.4,1,1), rgb(0.7,0.9,1,0.5), rgb(0.9,0.5,1,0.3))
 legend("top", fill = col, leg.txt, plot = TRUE, bty = "o", box.lwd = 1.5, bg = "white")
 ```
 
-![](Complete_workflow_files/figure-gfm/unnamed-chunk-2-5.png)<!-- -->
+![](Complete_workflow_files/figure-gfm/unnamed-chunk-7-4.png)<!-- -->
 
 ``` r
 #determining alpha2 (= highest genetic distance (i.e. max number of differences) between genotypes that we condider for MLL)
@@ -431,6 +462,8 @@ MLLlist
     ## [[15]]
     ## [1] 20
 
+Then we extract one individual from each MLL.
+
 ``` r
 # Extract one individual from each MLL 
 new_ind <- sapply(MLLlist, `[[`, 1)
@@ -472,19 +505,19 @@ data_noclones
 ``` r
 # When it's ok --> make this new genind the main genind object
 zyg_SB1 <- data_noclones
+```
 
-# Structure ?
+What about genetic structure ? Population structure has been already
+explored before. SB1 is a homogenous population.
 
-# Population structure has been already explored before. SB1 is a homogenous population.
-
+``` r
 # Export the final dataset that will be used after
 genind_to_genepop(zyg_SB1, output = here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", "comparison", "zyg_SB1_correct.txt"))
 ```
 
-    ## There is only one population in your dataset
+Use the same code as above for filtering SB2. Then :
 
 ``` r
-# ==> Use the same code for SB2
 # As only 11 loci were kept for SB1 and for the haploid dataset, we also keep the same 11 loci for SB2
 locNames(zyg_SB2)
 # We want to remove loci Tm2 and Tm98
@@ -498,24 +531,29 @@ genind_to_genepop(zyg_SB2, output = here("Data", "Data_processed", "Tuber_melano
 
 #### Duplicated data (from haploids)
 
-The same workflow is used here on the haploid dataset. Once the dataset
-is filtered, the duplication is processed using the GenAlEx programme
-implemented in Excel.
+The same kind of workflow is used here to filter the haploid dataset.
 
 ``` r
 # SB1
 haplo_SB1 <- read.genalex(here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", "haploid_data", 
                           "SB1.csv"), ploidy = 1, genclone = FALSE, sep = ";")
 haplo_SB1
+```
 
-# Missing data ?
+Filtering for missing data (with *poppr*)
+
+``` r
 missing.loc<-missingno(haplo_SB1, type = "loci", cutoff = 0.20);missing.loc
 missing.ind<-missingno(missing.loc, type = "genotype", cutoff = 0.20);missing.ind
 
 haplo_SB1<-missing.ind;haplo_SB1
+```
 
-# Clones ? (with Rclone method - for haploid data)
+Filtering for clones (with *Rclone*). First, data must be reformated to
+fit the Rclone format.
 
+``` r
+# Rclone method for haploid data
 data.df <- genind2df(haplo_SB1);View(data.df)
 vechaplo <- data.df[,1] # pop info (if present)
 dataset <- data.df[,2:ncol(data.df)]# dataset
@@ -523,7 +561,11 @@ haplodata <- dataset
 head(haplodata)
 
 MLG_tab(haplodata)
+```
 
+Determination of MLLs
+
+``` r
 respop <- genet_dist(haplodata, haploid = TRUE);respop
 ressim <- genet_dist_sim(haplodata, haploid = TRUE, nbrepeat = 1000)
 
@@ -536,8 +578,11 @@ plot(p2, col = rgb(0.7,0.9,1,0.5), freq = FALSE, add = TRUE)
 
 MLLlist <- MLL_generator(haplodata, haploid = TRUE, alpha2 = 0)
 MLLlist
+```
 
-# Extract one individual from each MLL 
+Extract one individual from each MLL
+
+``` r
 new_ind <- sapply(MLLlist, `[[`, 1)
 new_ind <- as.numeric(new_ind);new_ind
 
@@ -552,19 +597,36 @@ haplo_SB1 <- data_noclones
 # Export to csv
 genind2genalex(data_noclones, filename = here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", 
                                               "haploid_data", "SB2_haplo_correct.csv"), sep = ";")
-
-# After duplication via genalex, here is the final dataset
-dup_SB1 <- read.genalex(here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", "comparison", 
-                             "dup_SB1_correct.csv"), ploidy = 2, genclone = FALSE, sep = ";")
-dup_SB1
-
-# After duplication via genalex, here is the final dataset
-dup_SB1 <- read.genalex(here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", "comparison", 
-                             "dup_SB1_correct.csv"), ploidy = 2, genclone = FALSE, sep = ";")
-dup_SB1
-
-# ==> Use the same code for SB2
 ```
+
+Once the dataset is filtered, the duplication is processed using the
+GenAlEx programme implemented in Excel.
+
+``` r
+# After duplication via genalex, here is the final dataset
+dup_SB1 <- read.genalex(here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", "comparison", "dup_SB1_correct.csv"), ploidy = 2, genclone = FALSE, sep = ";")
+dup_SB1
+```
+
+    ## /// GENIND OBJECT /////////
+    ## 
+    ##  // 19 individuals; 11 loci; 29 alleles; size: 16.4 Kb
+    ## 
+    ##  // Basic content
+    ##    @tab:  19 x 29 matrix of allele counts
+    ##    @loc.n.all: number of alleles per locus (range: 1-4)
+    ##    @loc.fac: locus factor for the 29 columns of @tab
+    ##    @all.names: list of allele names for each locus
+    ##    @ploidy: ploidy of each individual  (range: 2-2)
+    ##    @type:  codom
+    ##    @call: read.genalex(genalex = "dup_SB1_correct.csv", ploidy = 2, genclone = FALSE, 
+    ##     sep = ";")
+    ## 
+    ##  // Optional content
+    ##    @pop: population of each individual (group size range: 19-19)
+    ##    @strata: a data frame with 1 columns ( Pop )
+
+Use the same code for SB2.
 
 #### Combined data (from haploids)
 
@@ -574,6 +636,9 @@ Warning : this method is called “combined” or “combination” in this
 scripts but refers to the “pairing” method described in the methods.
 Here the same haploid datasets (SB1 & SB2) as for the “duplication
 method” are used.
+
+First, 18 individuals are sampled randomly in SB1 (or 12 in SB2), as we
+need an even number to pair genotypes at the end.
 
 ``` r
 # SB1
@@ -594,19 +659,39 @@ sampled_genind <- haplo_SB1[sampled_indices, ]
 # Export to csv
 genind2genalex(sampled_genind, filename = here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", 
                                               "haploid_data", "subsamples_for_combination", "SB1_haplo_correct_n18.csv"), sep = ";")
+```
 
-# After combination via genalex, here is the final dataset
+Then, the combination is processed in GenAlEx. After this step, here is
+the final dataset :
+
+``` r
+# Final dataset
 comb_SB1 <- read.genalex(here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", "comparison", 
                              "comb_SB1_correct.csv"), ploidy = 2, genclone = FALSE, sep = ";")
 
 comb_SB1
-
-# After combination via genalex, here is the final dataset
-comb_SB1 <- read.genalex(here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", "comparison", 
-                              "comb_SB2_correct.csv"), ploidy = 2, genclone = FALSE, sep = ";")
-comb_SB1
-# ==> Use the same code for SB2, this time sampling 12 individuals without replacement.
 ```
+
+    ## /// GENIND OBJECT /////////
+    ## 
+    ##  // 9 individuals; 11 loci; 28 alleles; size: 14.2 Kb
+    ## 
+    ##  // Basic content
+    ##    @tab:  9 x 28 matrix of allele counts
+    ##    @loc.n.all: number of alleles per locus (range: 1-4)
+    ##    @loc.fac: locus factor for the 28 columns of @tab
+    ##    @all.names: list of allele names for each locus
+    ##    @ploidy: ploidy of each individual  (range: 2-2)
+    ##    @type:  codom
+    ##    @call: read.genalex(genalex = "comb_SB1_correct.csv", ploidy = 2, genclone = FALSE, 
+    ##     sep = ";")
+    ## 
+    ##  // Optional content
+    ##    @pop: population of each individual (group size range: 9-9)
+    ##    @strata: a data frame with 1 columns ( Pop )
+
+use the same code for SB2, this time sampling 12 individuals without
+replacement.
 
 ### Bias identification : Comparison of the 3 methods
 
@@ -616,31 +701,105 @@ two sites in one.
 
 Datasets used for the analysis :
 
+- Zygotes data (n=24)
+
 ``` r
-# Zygotes data (n=24)
 zyg<-read.genepop(here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", "comparison", 
                            "zygotes_SB_1pop.gen"), ncode = 3L, quiet = TRUE)
 zyg
+```
 
-# Duplicated data (n=32)
+    ## /// GENIND OBJECT /////////
+    ## 
+    ##  // 24 individuals; 11 loci; 38 alleles; size: 18.8 Kb
+    ## 
+    ##  // Basic content
+    ##    @tab:  24 x 38 matrix of allele counts
+    ##    @loc.n.all: number of alleles per locus (range: 1-5)
+    ##    @loc.fac: locus factor for the 38 columns of @tab
+    ##    @all.names: list of allele names for each locus
+    ##    @ploidy: ploidy of each individual  (range: 2-2)
+    ##    @type:  codom
+    ##    @call: read.genepop(file = here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", 
+    ##     "comparison", "zygotes_SB_1pop.gen"), ncode = 3L, quiet = TRUE)
+    ## 
+    ##  // Optional content
+    ##    @pop: population of each individual (group size range: 24-24)
+
+- Duplicated data (n=32)
+
+``` r
 dup <- read.genepop(here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", "comparison", 
                          "duplicated_SB_1pop.gen"), ncode = 2L, quiet = TRUE)
-dup
+```
 
-# Combined (n=15)
+    ## Warning in read.genepop(here("Data", "Data_processed",
+    ## "Tuber_melanosporum_Taschen2016", : Duplicate individual names detected.
+    ## Coercing them to be unique.
+
+``` r
+dup
+```
+
+    ## /// GENIND OBJECT /////////
+    ## 
+    ##  // 32 individuals; 11 loci; 41 alleles; size: 21 Kb
+    ## 
+    ##  // Basic content
+    ##    @tab:  32 x 41 matrix of allele counts
+    ##    @loc.n.all: number of alleles per locus (range: 1-6)
+    ##    @loc.fac: locus factor for the 41 columns of @tab
+    ##    @all.names: list of allele names for each locus
+    ##    @ploidy: ploidy of each individual  (range: 2-2)
+    ##    @type:  codom
+    ##    @call: read.genepop(file = here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", 
+    ##     "comparison", "duplicated_SB_1pop.gen"), ncode = 2L, quiet = TRUE)
+    ## 
+    ##  // Optional content
+    ##    @pop: population of each individual (group size range: 32-32)
+
+- Combined data (n=15)
+
+``` r
 comb <- read.genepop(here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", "comparison", 
                          "combined_SB_1pop.gen"), ncode = 2L, quiet = TRUE)
+```
+
+    ## Warning in read.genepop(here("Data", "Data_processed",
+    ## "Tuber_melanosporum_Taschen2016", : Duplicate individual names detected.
+    ## Coercing them to be unique.
+
+``` r
 comb
 ```
+
+    ## /// GENIND OBJECT /////////
+    ## 
+    ##  // 15 individuals; 11 loci; 41 alleles; size: 17.1 Kb
+    ## 
+    ##  // Basic content
+    ##    @tab:  15 x 41 matrix of allele counts
+    ##    @loc.n.all: number of alleles per locus (range: 1-6)
+    ##    @loc.fac: locus factor for the 41 columns of @tab
+    ##    @all.names: list of allele names for each locus
+    ##    @ploidy: ploidy of each individual  (range: 2-2)
+    ##    @type:  codom
+    ##    @call: read.genepop(file = here("Data", "Data_processed", "Tuber_melanosporum_Taschen2016", 
+    ##     "comparison", "combined_SB_1pop.gen"), ncode = 2L, quiet = TRUE)
+    ## 
+    ##  // Optional content
+    ##    @pop: population of each individual (group size range: 15-15)
 
 The statistical plan is the following :
 
 - 1 observation = 1 Ne estimation (+ Jackknife CI)
 - 1 variable = Ne
 - 3 factors : zyg, dup, comb
-- 10 replicates for each factor –\> subsample each group 10 times
-  (sample 10 individuals without replacement), except for the
-  “duplicated data”, were we sample 20 individuals.
+- 10 replicates for each factor
+
+To obtain this : subsample each group 10 times (sample 10 individuals
+without replacement), except for the “duplicated data”, were we sample
+20 individuals. Then export these replicates in the genepop format.
 
 ``` r
 # Individuals sampling
@@ -676,15 +835,19 @@ for (i in seq_along(sampled_geninds)) {
   file.copy(tmp_file, filename, overwrite = TRUE)
   unlink(tmp_file)
 }
-
-# The same code is used for the 3 methods, just replacing "duplicated" or "dup" by "zygotes/zyg" or "combined/comb"
 ```
+
+The same code is used for the 3 methods, just replacing “duplicated” or
+“dup” by “zygotes/zyg” or “combined/comb”
 
 #### Genetic metrics : Allelic richness, He and Fis
 
 For these 3 methods, the allelic richness, the expected heterozygosity
 (He) and the inbreeding coefficient (Fis) are calculated across the 10
 replicates.
+
+First, we need to retrieve the genepop files for all replicates, and
+store them as lists of 10 replicates for each method.
 
 ``` r
 # get back the 10 replicates of each group
@@ -703,9 +866,12 @@ genind_list <- lapply(genepop_files, function(x) {
 zyg <- genind_list
 
 # Do the same for each group
+```
 
-# Calculate He and Fis for each sample - using the package "hierfstat"
+Second, calculate He and Fis for each sample, using the package
+*hierfstat*. For Zygotes :
 
+``` r
 # Zygotes
 zyg_stats <- lapply(zyg, basic.stats); zyg_stats
 
@@ -722,7 +888,11 @@ he_values <- t(data.frame(sapply(zyg_summ, \(x) x[["Hexp"]])))
 
 # Create a data frame
 zyg_He <- data.frame("Grp"=c("zyg"), "He" = rowMeans(he_values))
+```
 
+For Duplicated data :
+
+``` r
 # Duplicated
 dup_stats <- lapply(dup_new, basic.stats); dup_stats
 
@@ -739,8 +909,11 @@ he_values <- t(data.frame(sapply(dup_summ, \(x) x[["Hexp"]])))
 
 # Create a data frame
 dup_He <- data.frame("Grp"=c("dup"),"He" = rowMeans(he_values))
+```
 
+For Combined data :
 
+``` r
 # Combined
 comb_stats <- lapply(comb, basic.stats); comb_stats
 
@@ -757,7 +930,12 @@ he_values <- t(data.frame(sapply(comb_summ, \(x) x[["Hexp"]])))
 
 # Create a data frame
 comb_He <- data.frame("Grp"=c("comb"), "He" = rowMeans(he_values))
+```
 
+Finally, combine all the genetic metrics in one dataset and export it in
+.csv.
+
+``` r
 # Combine all data in a df
 He <- dplyr::bind_rows(zyg_He, dup_He, comb_He)
 Fis <- dplyr::bind_rows(zyg_Fis, dup_Fis, comb_Fis)
@@ -783,10 +961,20 @@ a genetic dataset on the estimation of Ne.
 
 ### Filtering step
 
-``` r
-# Original dataset
-data <- read.genepop(here("Data", "Data_processed", "Boletus_edulis_Hoffman2020","Boletus_edulis.gen"), ncode = 2L, quiet = TRUE) 
+Before accounting for the impact of clonality, we must check 2 things :
 
+- are they missing data in the dataset ?
+- is the population homogenous or structured ?
+
+The original dataset :
+
+``` r
+data <- read.genepop(here("Data", "Data_processed", "Boletus_edulis_Hoffman2020","Boletus_edulis.gen"), ncode = 2L, quiet = TRUE)
+```
+
+Filtering for missing data with *poppr* package
+
+``` r
 # Missing data correction
 # Remove loci with more than 20% of missing data
 missing.loc<-missingno(data, type = "loci", cutoff = 0.20);missing.loc
@@ -796,7 +984,12 @@ missing.ind<-missingno(missing.loc, type = "genotype", cutoff = 0.20);missing.in
 
 # Make this cleaned dataset the new main dataset
 data<-missing.ind;data
+```
 
+Warning ! The fact of removing individuals can disrupt the numbering of
+individuals. There’s a quick correction to do before continuing.
+
+``` r
 # Correction : Make sample indentifiers consecutive
 # Extract unique and ordered rownames (identifier labels)
 ordered_ids <- sort(unique(rownames(data@tab)))
@@ -804,7 +997,11 @@ ordered_ids <- sort(unique(rownames(data@tab)))
 mapping_df <- data.frame(old_id = ordered_ids, new_id = sequence(length(ordered_ids)), stringsAsFactors = FALSE)
 # Apply the mapping to update the rownames attribute
 rownames(data@tab) <- mapping_df$new_id
+```
 
+Population structure analysis (using DAPC from *adegenet* package)
+
+``` r
 # Structure analysis to find homogenous pops
 # Find the best number of groups
 grp<-find.clusters(data, max.n.clust = 15) # max.n.clust can be the number of sites or "populations"
@@ -832,18 +1029,27 @@ scatter(dapc1, posi.da="bottomright",  posi.pca="bottomleft",
 groups <- as.factor(grp$grp)
 levels(groups) <- c("Pop1", "Pop2", "Pop3")
 data@pop <- groups
+```
 
+We found 3 genetically different populations. As a consequence, we have
+to separate the genind object in 3 populations.
+
+``` r
 # Separate the genind object in 3 pops
 Pops <- seppop(data)
 Pop1 <- Pops$Pop1 ; Pop2 <- Pops$Pop2 ; Pop3 <- Pops$Pop3
+```
 
-# Before going further, let's do a quick analysis of MLG, to see which population will have 
-# enough "individuals"
+Before going further, let’s do a quick analysis of MLG, to see which
+population will have enough “individuals”
+
+``` r
 poppr(Pop1)
 poppr(Pop2)
 poppr(Pop3)
-# We take the largest population -> Pop1, with N = 60 and MLG = 31
 ```
+
+We take the largest population -\> Pop1, with N = 60 and MLG = 31
 
 ### Bias identification : comparison of 5 treatments
 
@@ -856,8 +1062,10 @@ The goal is to compare the estimations of Ne for 5 types of populations
 - without any clones (MLG),
 - without any similar MLL.
 
+We are working with one population of 60 “individuals”, let’s first
+visualise clones using *Rclone*.
+
 ``` r
-# Using Rclone to visualise clones in our Population
 # Plot
 P.tab <- mlg.table(Pop1)
 
@@ -872,7 +1080,13 @@ head(data2)
 
 # MLG list
 MLGlist <- MLG_list(data2);MLGlist
+```
 
+Create the datasets corresponding to the 5 treatments :
+
+- without big clones (\>= 7)
+
+``` r
 # Without big clones
 # List of samples to remove = all samples from MLGs with >= 7 clones, except one sample
 big_clones <- c(3,4,5,6,7,8,9,35,36,37,38,39,40,54,55,56,57,58,59)
@@ -885,9 +1099,11 @@ new_ind
 no_large_clone <- Pop1[new_ind, ]
 # Check if the genind object is correct
 no_large_clone
+```
 
+- without big and medium clones (\>= 3)
 
-# Without medium and large clones
+``` r
 # List of samples to remove = all samples from MLGs with >= 3 clones, except one sample
 MLGlist
 med_clones <- c(3,4,5,6,7,8,9,20,21,23,22,24,29,35,36,37,38,39,40,48,49,54,55,56,57,58,59)
@@ -900,8 +1116,11 @@ new_ind
 no_med_clone <- Pop1[new_ind, ]
 # Check if the genind object is correct
 no_med_clone
+```
 
-# Without any clone
+- without any clones (MLG)
+
+``` r
 # Extract one individual from each MLG (= remove all clones)
 new_ind <- sapply(MLGlist, `[[`, 1)
 new_ind <- as.numeric(new_ind);new_ind
@@ -909,8 +1128,11 @@ new_ind <- as.numeric(new_ind);new_ind
 noclones <- Pop1[new_ind, ]
 # Check if the genind object is correct
 noclones
+```
 
-# Without any similar MLL
+- Without any similar MLL
+
+``` r
 # MLL analysis
 
 #genetic distances computation, distance on allele differences:
@@ -1002,23 +1224,23 @@ for (i in seq_along(sampled_geninds)) {
   file.copy(tmp_file, filename, overwrite = TRUE)
   unlink(tmp_file)
 }
-
-# Same code for each dataset, just change the name of the output file and genind object
 ```
+
+Use the same code for each dataset, just change the name of the output
+file and genind object.
 
 Then Ne is estimated in NeEstimator for the 10 replicates of each
 treatment. The results are analysed with statistical tests to assess
 significant differences between treatments.
 
-``` r
-# Compare Ne estimations
+First exploration of the data :
 
+``` r
 # Data (table containing Ne results for 10 replicates * 5 treatments)
 data <- read.csv(here("Outputs", "Brief_results", "clonality", "Clone_correction_bol_edu.csv"),
                  header = TRUE, sep = ";", dec =",")
 
 # Subset data per category
-
 nocorr <- filter(data, Corr == "nocorr")
 nolarge <- filter(data, Corr == "nolarge")
 nomed <- filter(data, Corr == "nomed")
@@ -1030,11 +1252,11 @@ boxplot(Ne.~Corr, data = data, main = "Ne estimation as a function of the propor
         xlab = "Clone correction", ylab = "^Ne")
 ```
 
-![](Complete_workflow_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](Complete_workflow_files/figure-gfm/unnamed-chunk-40-1.png)<!-- -->
+
+Statistical tests :
 
 ``` r
-# Statistical tests
-
 # 1-way ANOVA
 
 #Type of plan 
@@ -1166,7 +1388,8 @@ letters <- multcompLetters(TUKEY$`Corr`[,4]);letters
     ## nolarge   nomed   nomlg   nomll  nocorr 
     ##    "ab"    "ac"    "cd"     "d"     "b"
 
-The results were plotted using the ggplot2 package.
+The results were plotted using the ggplot2 package, to produce Figure 2
+of the report.
 
 ``` r
 # Define the order of factors
@@ -1199,7 +1422,7 @@ fig2 <- ggplot(data, aes(x = condition, y = Ne., fill = condition)) +
 fig2
 ```
 
-![](Complete_workflow_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](Complete_workflow_files/figure-gfm/unnamed-chunk-42-1.png)<!-- -->
 
 ## Effect of genetic structure on Ne estimation
 
@@ -1211,188 +1434,10 @@ authors. The goal of this part is to estimate Ne for different
 populations and groups of populations in order to assess a potential
 effect of genetic structure. As this dataset concerns SNP data, the
 whole analysis was processed using the Genotoul bioinformatics platform.
-The following script details how to standardize the sampling of
-individuals (n=12) and creating 10 replicates of 2K SNPs samples.
 
-In the following, abbreviations correspond to the following populations
-:
-
-- cal = California
-- nocal = Inland (all except California)
-- mocal = Mountain California
-- cocal = Coastal California
-- wycol = Wyoming + Colorado
-- minwhi = Minnesota + Canada (Whitecourt)
-
-``` bash
-cd /usr/local/bioinfo/src
-module load bioinfo/tabix-0.2.5
-module load bioinfo/vcftools-0.1.16
-
-# For the "all" dataset, we want to have a representative sample across locations (3 from Mocal, 3 from Cocal, 3 from Wycol, 2 from Minwhi, 1 from Canada (Castle Rock)) 
-# --> in each site, individuals are randomly chosen using the sample() function in R.
-
-# Create a text file with the individuals' IDs (one per line)
-gedit individuals.txt
-
-# Create an output file containing only the individuals choosen
-vcftools --vcf all20.recode.vcf --keep individuals.txt --recode --recode-INFO-all --out all20.12
-rm *.log
-
-# Then, we need to sample randomly 12 individuals from the different groups that contain more than 12 individuals : cal, nocal and mocal.
-
-# Take 12 individuals randomly
-vcftools --vcf cal20.recode.vcf --max-indv 12 --recode --recode-INFO-all --out cal20.12
-vcftools --vcf mocal20.recode.vcf --max-indv 12 --recode --recode-INFO-all --out mocal20.12
-vcftools --vcf nocal20.recode.vcf --max-indv 12 --recode --recode-INFO-all --out nocal20.12
-rm *.log
-
-# The 2 other pops have already 12 or 11 individuals, so we'll just rename them
-cp minwhi.recode.vcf minwhi20.12.recode.vcf
-cp wycol.recode.vcf wycol20.12.recode.vcf
-
-# We also want to explore what happens with smaller subsets of SNPs, let's try 2000 SNPs.
-
-# Generate files in the "plink" format, with extension .ped and .map, but we'll use only the .map files
-mkdir data
-vcftools --vcf all20.12.recode.vcf --plink --out ./data/all
-vcftools --vcf mocal20.12.recode.vcf  --plink --out ./data/mocal 
-vcftools --vcf cal20.12.recode.vcf --plink --out ./data/cal
-vcftools --vcf nocal20.12.recode.vcf  --plink --out ./data/nocal
-vcftools --vcf minwhi20.12.recode.vcf  --plink --out ./data/minwhi
-vcftools --vcf wycol20.12.recode.vcf  --plink --out ./data/wycol
-
-# deleting the log files that we don't need
-rm ./data/*log
-
-# We use the map file to extract the list of "scaffolds" and their variant sites (SNPs)
-# saving in the newly created directory "snplist"
-mkdir snplist
-cut -f 2 ./data/all.map > ./snplist/all.snps
-cut -f 2 ./data/cal.map > ./snplist/cal.snps
-cut -f 2 ./data/mocal.map > ./snplist/mocal.snps
-cut -f 2 ./data/nocal.map > ./snplist/nocal.snps
-cut -f 2 ./data/minwhi.map > ./snplist/minwhi.snps
-cut -f 2 ./data/wycol.map > ./snplist/wycol.snps
-
-# From these lists, we subsample 2000 SNPs randomly using "shuffle = shuf"
-# For each of the individual groups, we create 10 smaller subsets of SNPs:
-
-# all
-for i in {1..10}; do
- shuf ./snplist/all.snps | head -n 2000 | sort > ./snplist/all.subset2K$i.snps       
-done
-
-# cal
-for i in {1..10}; do
- shuf ./snplist/cal.snps | head -n 2000 | sort > ./snplist/cal.subset2K$i.snps       
-done
-
-# mocal
-for i in {1..10}; do
- shuf ./snplist/mocal.snps | head -n 2000 | sort > ./snplist/mocal.subset2K$i.snps       
-done
-
-# nocal
-for i in {1..10}; do
- shuf ./snplist/nocal.snps | head -n 2000 | sort > ./snplist/nocal.subset2K$i.snps       
-done
-
-# minwhi
-for i in {1..10}; do
- shuf ./snplist/minwhi.snps | head -n 2000 | sort > ./snplist/minwhi.subset2K$i.snps       
-done
-
-# minwhi
-for i in {1..10}; do
- shuf ./snplist/wycol.snps | head -n 2000 | sort > ./snplist/wycol.subset2K$i.snps       
-done
-
-# we need to replace the ":" with a tab
-
-# all
-for i in {1..10}; do
- tr ':' '\t' < ./snplist/all.subset2K$i.snps > ./snplist/all.subset2.$i.snps    
-done
-
-# cal
-for i in {1..10}; do
- tr ':' '\t' < ./snplist/cal.subset2K$i.snps > ./snplist/cal.subset2.$i.snps    
-done
-
-# mocal
-for i in {1..10}; do
- tr ':' '\t' < ./snplist/mocal.subset2K$i.snps > ./snplist/mocal.subset2.$i.snps    
-done
-
-# nocal
-for i in {1..10}; do
- tr ':' '\t' < ./snplist/nocal.subset2K$i.snps > ./snplist/nocal.subset2.$i.snps    
-done
-
-# minwhi
-for i in {1..10}; do
- tr ':' '\t' < ./snplist/minwhi.subset2K$i.snps > ./snplist/minwhi.subset2.$i.snps    
-done
-
-# minwhi
-for i in {1..10}; do
- tr ':' '\t' < ./snplist/wycol.subset2K$i.snps > ./snplist/wycol.subset2.$i.snps    
-done
-
-# notice the last files do not have "K" in their name. 
-# and then rename them
-
-for i in {1..10}; do
- mv ./snplist/all.subset2.$i.snps ./snplist/all.subset2K$i.snps   
-done
-
-for i in {1..10}; do
- mv ./snplist/cal.subset2.$i.snps ./snplist/cal.subset2K$i.snps   
-done
-
-for i in {1..10}; do
- mv ./snplist/mocal.subset2.$i.snps ./snplist/mocal.subset2K$i.snps   
-done
-
-for i in {1..10}; do
- mv ./snplist/nocal.subset2.$i.snps ./snplist/nocal.subset2K$i.snps   
-done
-
-for i in {1..10}; do
- mv ./snplist/minwhi.subset2.$i.snps ./snplist/minwhi.subset2K$i.snps   
-done
-
-for i in {1..10}; do
- mv ./snplist/wycol.subset2.$i.snps ./snplist/wycol.subset2K$i.snps   
-done
-
-# with vcftools, we create the vcf files with the new subset of SNPs
-
-for i in {1..10}; do
-vcftools --vcf all20.12.recode.vcf --positions ./snplist/all.subset2K$i.snps --recode --out ./data/all2K.$i
-done
-
-for i in {1..10}; do
-vcftools --vcf cal20.12.recode.vcf --positions ./snplist/cal.subset2K$i.snps --recode --out ./data/cal2K.$i
-done
-
-for i in {1..10}; do
-vcftools --vcf mocal20.12.recode.vcf --positions ./snplist/mocal.subset2K$i.snps --recode --out ./data/mocal2K.$i
-done
-
-for i in {1..10}; do
-vcftools --vcf nocal20.12.recode.vcf --positions ./snplist/nocal.subset2K$i.snps --recode --out ./data/nocal2K.$i
-done
-
-for i in {1..10}; do
-vcftools --vcf minwhi20.12.recode.vcf --positions ./snplist/minwhi.subset2K$i.snps --recode --out ./data/minwhi2K.$i
-done
-
-for i in {1..10}; do
-vcftools --vcf wycol20.12.recode.vcf --positions ./snplist/wycol.subset2K$i.snps --recode --out ./data/wycol2K.$i
-done
-```
+A script detailing how to standardize the sampling of individuals (n=12)
+and creating 10 replicates of 2K SNPs samples is available in the
+“scripts” folder : “Sui_bre_structure.sh”.
 
 Once all datasets are created (in VCF format), they are converted into
 the GENEPOP format using the software programme PGDSpider. Ne is
@@ -1405,299 +1450,20 @@ luteus* from Bazzicalupo et al. 2020.
 
 In these two species genotyped with SNPs, we compare Ne estimations from
 datasets containing large VS small datasets, i.e. containing 20,000 SNPs
-VS 2,000 SNPs.
+VS 2,000 SNPs. As this dataset concerns SNP data, the whole analysis was
+processed using the Genotoul bioinformatics platform.
 
 ### *Suillus brevipes*
 
 The analysis was carried out in *Suillus brevipes* on the 6 populations
-identified above (see section ). 12 individuals were sampled in each
-population, and 10 subsets were made with 2,000 SNPs and 20,000 SNPs
-from the original dataset.
+identified in the “genetic structure” part. 12 individuals were sampled
+in each population, and 10 subsets were made with 2,000 SNPs and 20,000
+SNPs from the original dataset.
 
-#### 2K SNPs subsets
+#### Creating 2K and 20K SNPs subsets
 
-``` bash
-# Sample 10 replicates of 2 000 SNPs in each pop in order to compare estimations together.
-# We have to start with the original dataset ("XXX.recode.vcf") and sampling 12 individuals in each population.
-
-# Create an output file containing only the individuals choosen in "all"
-vcftools --vcf all.recode.vcf --keep individuals.txt --recode --recode-INFO-all --out all.12
-rm *.log
-
-# Then, we need to sample randomly 12 individuals from the different groups that contain more than 12 individuals : cal, nocal and mocal.
-
-# Take 12 individuals randomly
-vcftools --vcf cal.recode.vcf --max-indv 12 --recode --recode-INFO-all --out cal.12
-vcftools --vcf mocal.recode.vcf --max-indv 12 --recode --recode-INFO-all --out mocal.12
-vcftools --vcf nocal.recode.vcf --max-indv 12 --recode --recode-INFO-all --out nocal.12
-rm *.log
-
-# The 2 other pops have already 12 or 11 individuals, so we'll just rename them
-cp minwhi.recode.vcf minwhi.12.recode.vcf
-cp wycol.recode.vcf wycol.12.recode.vcf
-
-# we first generate files in the "plink" format, with extension .ped and .map, but we'll use only the .map files
-
-vcftools --vcf all.12.recode.vcf --plink --out ./data/all 
-vcftools --vcf mocal.12.recode.vcf  --plink --out ./data/mocal 
-vcftools --vcf cal.12.recode.vcf --plink --out ./data/cal 
-vcftools --vcf minwhi.12.recode.vcf --plink --out ./data/minwhi
-vcftools --vcf wycol.12.recode.vcf  --plink --out ./data/wycol 
-vcftools --vcf nocal.12.recode.vcf  --plink --out ./data/nocal 
-
-# deleting the log files that we don't need
-rm ./data/*log
-
-# We use the map file to extract the list of "scaffolds" and their variant sites (SNPs)
-# saving in the newly created directory "snplist2"
-mkdir snplist2
-cut -f 2 ./data/all.map > ./snplist2/all.snps
-cut -f 2 ./data/cal.map > ./snplist2/cal.snps
-cut -f 2 ./data/mocal.map > ./snplist2/mocal.snps
-cut -f 2 ./data/nocal.map > ./snplist2/nocal.snps
-cut -f 2 ./data/minwhi.map > ./snplist2/minwhi.snps
-cut -f 2 ./data/wycol.map > ./snplist2/wycol.snps
-
-# From these lists, we subsample 2000 SNPs randomly using "shuffle = shuf"
-# For each of the individual groups, we create 10 smaller subsets of SNPs:
-
-# all
-for i in {1..10}; do
- shuf ./snplist2/all.snps | head -n 2000 | sort > ./snplist2/all.subset2K$i.snps       
-done
-
-# cal
-for i in {1..10}; do
- shuf ./snplist2/cal.snps | head -n 2000 | sort > ./snplist2/cal.subset2K$i.snps       
-done
-
-# mocal
-for i in {1..10}; do
- shuf ./snplist2/mocal.snps | head -n 2000 | sort > ./snplist2/mocal.subset2K$i.snps       
-done
-
-# nocal
-for i in {1..10}; do
- shuf ./snplist2/nocal.snps | head -n 2000 | sort > ./snplist2/nocal.subset2K$i.snps       
-done
-
-# minwhi
-for i in {1..10}; do
- shuf ./snplist2/minwhi.snps | head -n 2000 | sort > ./snplist2/minwhi.subset2K$i.snps       
-done
-
-# mycol
-for i in {1..10}; do
- shuf ./snplist2/wycol.snps | head -n 2000 | sort > ./snplist2/wycol.subset2K$i.snps       
-done
-
-# we need to replace the ":" with a tab
-
-# all
-for i in {1..10}; do
- tr ':' '\t' < ./snplist2/all.subset2K$i.snps > ./snplist2/all.subset2.$i.snps    
-done
-
-# cal
-for i in {1..10}; do
- tr ':' '\t' < ./snplist2/cal.subset2K$i.snps > ./snplist2/cal.subset2.$i.snps    
-done
-
-# mocal
-for i in {1..10}; do
- tr ':' '\t' < ./snplist2/mocal.subset2K$i.snps > ./snplist2/mocal.subset2.$i.snps    
-done
-
-# nocal
-for i in {1..10}; do
- tr ':' '\t' < ./snplist2/nocal.subset2K$i.snps > ./snplist2/nocal.subset2.$i.snps    
-done
-
-# minwhi
-for i in {1..10}; do
- tr ':' '\t' < ./snplist2/minwhi.subset2K$i.snps > ./snplist2/minwhi.subset2.$i.snps    
-done
-
-# wycol
-for i in {1..10}; do
- tr ':' '\t' < ./snplist2/wycol.subset2K$i.snps > ./snplist2/wycol.subset2.$i.snps    
-done
-
-# notice the last files do not have "K" in their name. 
-# and then rename them
-
-for i in {1..10}; do
- mv ./snplist2/all.subset2.$i.snps ./snplist2/all.subset2K$i.snps   
-done
-
-for i in {1..10}; do
- mv ./snplist2/cal.subset2.$i.snps ./snplist2/cal.subset2K$i.snps   
-done
-
-for i in {1..10}; do
- mv ./snplist2/mocal.subset2.$i.snps ./snplist2/mocal.subset2K$i.snps   
-done
-
-for i in {1..10}; do
- mv ./snplist2/nocal.subset2.$i.snps ./snplist2/nocal.subset2K$i.snps   
-done
-
-for i in {1..10}; do
- mv ./snplist2/minwhi.subset2.$i.snps ./snplist2/minwhi.subset2K$i.snps   
-done
-
-for i in {1..10}; do
- mv ./snplist2/wycol.subset2.$i.snps ./snplist2/wycol.subset2K$i.snps   
-done
-
-# with vcftools, we create the vcf files with the new subset of SNPs
-
-for i in {1..10}; do
-vcftools --vcf all.12.recode.vcf --positions ./snplist2/all.subset2K$i.snps --recode --out ./data/all2K.$i
-done
-
-for i in {1..10}; do
-vcftools --vcf cal.12.recode.vcf --positions ./snplist2/cal.subset2K$i.snps --recode --out ./data/cal2K.$i
-done
-
-for i in {1..10}; do
-vcftools --vcf mocal.12.recode.vcf --positions ./snplist2/mocal.subset2K$i.snps --recode --out ./data/mocal2K.$i
-done
-
-for i in {1..10}; do
-vcftools --vcf nocal.12.recode.vcf --positions ./snplist2/nocal.subset2K$i.snps --recode --out ./data/nocal2K.$i
-done
-
-for i in {1..10}; do
-vcftools --vcf minwhi.12.recode.vcf --positions ./snplist2/minwhi.subset2K$i.snps --recode --out ./data/minwhi2K.$i
-done
-
-for i in {1..10}; do
-vcftools --vcf wycol.12.recode.vcf --positions ./snplist2/wycol.subset2K$i.snps --recode --out ./data/wycol2K.$i
-done
-```
-
-#### 20K SNPs subsets
-
-``` bash
-# From the same lists, we subsample 20000 SNPs randomly using "shuffle = shuf"
-# For each of the individual groups, we create 10 smaller subsets of SNPs:
-
-# all
-for i in {1..10}; do
- shuf ./snplist2/all.snps | head -n 20000 | sort > ./snplist2/all.subset20K$i.snps       
-done
-
-# cal
-for i in {1..10}; do
- shuf ./snplist2/cal.snps | head -n 20000 | sort > ./snplist2/cal.subset20K$i.snps       
-done
-
-# mocal
-for i in {1..10}; do
- shuf ./snplist2/mocal.snps | head -n 20000 | sort > ./snplist2/mocal.subset20K$i.snps       
-done
-
-# nocal
-for i in {1..10}; do
- shuf ./snplist2/nocal.snps | head -n 20000 | sort > ./snplist2/nocal.subset20K$i.snps       
-done
-
-# minwhi
-for i in {1..10}; do
- shuf ./snplist2/minwhi.snps | head -n 20000 | sort > ./snplist2/minwhi.subset20K$i.snps       
-done
-
-# mycol
-for i in {1..10}; do
- shuf ./snplist2/wycol.snps | head -n 20000 | sort > ./snplist2/wycol.subset20K$i.snps       
-done
-
-# we need to replace the ":" with a tab
-
-# all
-for i in {1..10}; do
- tr ':' '\t' < ./snplist2/all.subset20K$i.snps > ./snplist2/all.subset20.$i.snps    
-done
-
-# cal
-for i in {1..10}; do
- tr ':' '\t' < ./snplist2/cal.subset20K$i.snps > ./snplist2/cal.subset20.$i.snps    
-done
-
-# mocal
-for i in {1..10}; do
- tr ':' '\t' < ./snplist2/mocal.subset20K$i.snps > ./snplist2/mocal.subset20.$i.snps    
-done
-
-# nocal
-for i in {1..10}; do
- tr ':' '\t' < ./snplist2/nocal.subset20K$i.snps > ./snplist2/nocal.subset20.$i.snps    
-done
-
-# minwhi
-for i in {1..10}; do
- tr ':' '\t' < ./snplist2/minwhi.subset20K$i.snps > ./snplist2/minwhi.subset20.$i.snps    
-done
-
-# wycol
-for i in {1..10}; do
- tr ':' '\t' < ./snplist2/wycol.subset20K$i.snps > ./snplist2/wycol.subset20.$i.snps    
-done
-
-# notice the last files do not have "K" in their name. 
-# and then rename them 
-
-for i in {1..10}; do
- mv ./snplist2/all.subset20.$i.snps ./snplist2/all.subset20K$i.snps   
-done
-
-for i in {1..10}; do
- mv ./snplist2/cal.subset20.$i.snps ./snplist2/cal.subset20K$i.snps   
-done
-
-for i in {1..10}; do
- mv ./snplist2/mocal.subset20.$i.snps ./snplist2/mocal.subset20K$i.snps   
-done
-
-for i in {1..10}; do
- mv ./snplist2/nocal.subset20.$i.snps ./snplist2/nocal.subset20K$i.snps   
-done
-
-for i in {1..10}; do
- mv ./snplist2/minwhi.subset20.$i.snps ./snplist2/minwhi.subset20K$i.snps   
-done
-
-for i in {1..10}; do
- mv ./snplist2/wycol.subset20.$i.snps ./snplist2/wycol.subset20K$i.snps   
-done
-
-# with vcftools, we create the vcf files with the new subset of SNPs
-
-for i in {1..10}; do
-vcftools --vcf all.12.recode.vcf --positions ./snplist2/all.subset20K$i.snps --recode --out ./data/all20K.$i
-done
-
-for i in {1..10}; do
-vcftools --vcf cal.12.recode.vcf --positions ./snplist2/cal.subset20K$i.snps --recode --out ./data/cal20K.$i
-done
-
-for i in {1..10}; do
-vcftools --vcf mocal.12.recode.vcf --positions ./snplist2/mocal.subset20K$i.snps --recode --out ./data/mocal20K.$i
-done
-
-for i in {1..10}; do
-vcftools --vcf nocal.12.recode.vcf --positions ./snplist2/nocal.subset20K$i.snps --recode --out ./data/nocal20K.$i
-done
-
-for i in {1..10}; do
-vcftools --vcf minwhi.12.recode.vcf --positions ./snplist2/minwhi.subset20K$i.snps --recode --out ./data/minwhi20K.$i
-done
-
-for i in {1..10}; do
-vcftools --vcf wycol.12.recode.vcf --positions ./snplist2/wycol.subset20K$i.snps --recode --out ./data/wycol20K.$i
-done
-```
+A script for creating subsets of 2K and 20K SNPs with 10 replicates is
+available in the “scripts” folder : “Sui_bre_SNPs.sh”.
 
 #### Ne estimation
 
@@ -1709,6 +1475,9 @@ We want to compare 2 means : mean Ne for 20 000 SNPs and mean Ne for 2
 000 SNPs. As we have sampled SNPs randomly from the same pool of SNPs,
 the samples are not independent. Then, we’ll use a Wilcoxon test for
 paired samples (non parametric).
+
+Retrieve the dataframe containing Ne estimations, and subset the data
+according to poplations.
 
 ``` r
 # Data
@@ -1723,13 +1492,19 @@ nocal <- filter(data, Pop == "nocal")
 mocal <- filter(data, Pop == "mocal")
 wycol <- filter(data, Pop == "wycol")
 minwhi <- filter(data, Pop == "minwhi")
+```
 
+Explore the data
+
+``` r
 # Data exploration
 boxplot(Ne.~Nbr_SNPs, data = all, main = "Ne estimation from 20K SNPs and 2K SNPs samples",
         xlab = "Number of SNPs", ylab = "^Ne")
 ```
 
-![](Complete_workflow_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+![](Complete_workflow_files/figure-gfm/unnamed-chunk-44-1.png)<!-- -->
+
+Statistical tests
 
 ``` r
 # Wilcoxon test
@@ -1743,11 +1518,9 @@ wilcox.test(Ne.~Nbr_SNPs, data = all, paired=TRUE, alternative="less")
     ## V = 0, p-value = 0.0009766
     ## alternative hypothesis: true location shift is less than 0
 
-``` r
-# Do boxplots and tests for each population by changing data = "..."
-```
+Do boxplots and tests for each population by changing data = “…”
 
-We can represent the results in a barplot.
+Then we can represent the results in a barplot.
 
 ``` r
 # Define palette
@@ -1841,7 +1614,7 @@ fig <- ggplot(data, aes(x = condition, y = Ne., fill = Nbr_SNPs)) +
 fig
 ```
 
-![](Complete_workflow_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](Complete_workflow_files/figure-gfm/unnamed-chunk-46-1.png)<!-- -->
 
 ### *Suillus luteus*
 
@@ -1850,83 +1623,10 @@ population identified by the authors in their dataset. All individuals
 were used (n = 34), and 10 subsets were made with 2,000 SNPs and 20,000
 SNPs from the original dataset.
 
-#### 2K SNPs subsets
+#### Creating 2K and 20K SNPs subsets
 
-``` bash
-# checking missing data first:
-vcftools --vcf gvcf.filtered.2020-05-23dik.recode.vcf --remove-indels --max-missing 0.8 --recode --out Sui_lut
-
-# we generate files in the "plink" format, with extension .ped and .map, but we'll use only the .map files
-
-vcftools --vcf Sui_lut.recode.vcf --plink --out Sui_lut 
-
-# deleting the the log files that we don't need
-
-rm *log
-
-# We use the map file to extract the list of "scaffolds" and their variant sites (SNPs)
-# saving in the newly created directory "snplist"
-mkdir snplist
-cut -f 2 Sui_lut.map > ./snplist/Sui_lut.snps
-
-# From these lists, we subsample 2000 SNPs randomly using "shuffle = shuf"
-# For each of the individual groups, we create 10 smaller subsets of SNPs:
-
-for i in {1..10}; do
- shuf ./snplist/Sui_lut.snps | head -n 2000 | sort > ./snplist/Sui_lut.subset2K$i.snps       
-done
-
-# we need to replace the ":" with a tab
-
-for i in {1..10}; do
- tr ':' '\t' < ./snplist/Sui_lut.subset2K$i.snps > ./snplist/Sui_lut.subset2.$i.snps    
-done
-
-# notice the last files do not have "K" in their name. 
-# and then rename them
-
-for i in {1..10}; do
- mv ./snplist/Sui_lut.subset2.$i.snps ./snplist/Sui_lut.subset2K$i.snps   
-done
-
-# with vcftools, we create the vcf files with the new subset of SNPs
-
-for i in {1..10}; do
-vcftools --vcf Sui_lut.recode.vcf --positions ./snplist/Sui_lut.subset2K$i.snps --recode --out ./data/Sui_lut2K.$i
-done
-```
-
-#### 2K SNPs subsets
-
-``` bash
-## Let's do the same for 20K SNPs subsets
-
-# From these lists, we subsample 20000 SNPs randomly using "shuffle = shuf"
-# For each of the individual groups, we create 10 smaller subsets of SNPs:
-
-for i in {1..10}; do
- shuf ./snplist/Sui_lut.snps | head -n 20000 | sort > ./snplist/Sui_lut.subset20K$i.snps       
-done
-
-# we need to replace the ":" with a tab
-
-for i in {1..10}; do
- tr ':' '\t' < ./snplist/Sui_lut.subset20K$i.snps > ./snplist/Sui_lut.subset20.$i.snps    
-done
-
-# notice the last files do not have "K" in their name. 
-# and then rename them 
-
-for i in {1..10}; do
- mv ./snplist/Sui_lut.subset20.$i.snps ./snplist/Sui_lut.subset20K$i.snps   
-done
-
-# with vcftools, we create the vcf files with the new subset of SNPs
-
-for i in {1..10}; do
-vcftools --vcf Sui_lut.recode.vcf --positions ./snplist/Sui_lut.subset20K$i.snps --recode --out ./data/Sui_lut20K.$i
-done
-```
+A script for creating subsets of 2K and 20K SNPs with 10 replicates is
+available in the “scripts” folder : “Sui_lut_SNPs.sh”.
 
 #### Ne estimation
 
@@ -1939,19 +1639,27 @@ We want to compare 2 means : mean Ne for 20 000 SNPs and mean Ne for 2
 the samples are not independent. Then, we’ll use a Wilcoxon test for
 paired samples (non parametric).
 
+Retrieve the dataframe containing Ne estimates
+
 ``` r
 # Data
 data <- read.csv(here("Outputs", "Brief_results", "pseudorep_Suillus", "Report_analysis", "Pseudorep_Sui_lut.csv"), 
                  header = TRUE, sep = ";", dec = ",")
 
 # There is only 1 population
+```
 
+Explore the data
+
+``` r
 # Data exploration
 boxplot(Ne.~Nbr_SNPs, data = data, main = "Ne estimation from 20K SNPs and 2K SNPs samples",
         xlab = "Number of SNPs", ylab = "^Ne")
 ```
 
-![](Complete_workflow_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+![](Complete_workflow_files/figure-gfm/unnamed-chunk-48-1.png)<!-- -->
+
+Statistical tests
 
 ``` r
 # Wilcoxon test
@@ -2103,7 +1811,7 @@ fig1 <- ggplot(brevipes, aes(x = condition, y = Ne., fill = Nbr_SNPs)) +
 fig1
 ```
 
-![](Complete_workflow_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](Complete_workflow_files/figure-gfm/unnamed-chunk-51-1.png)<!-- -->
 
 ``` r
 # Plot 2 : Suillus luteus
@@ -2139,10 +1847,10 @@ fig2 <- ggplot(luteus, aes(x = Pop, y = Ne., fill = Nbr_SNPs)) +
 fig2
 ```
 
-![](Complete_workflow_files/figure-gfm/unnamed-chunk-23-2.png)<!-- -->
+![](Complete_workflow_files/figure-gfm/unnamed-chunk-51-2.png)<!-- -->
 
 ``` r
 Figure_4 <- grid.arrange(fig1, fig2, nrow = 1, ncol = 2, widths = 2:1)
 ```
 
-![](Complete_workflow_files/figure-gfm/unnamed-chunk-23-3.png)<!-- -->
+![](Complete_workflow_files/figure-gfm/unnamed-chunk-51-3.png)<!-- -->
