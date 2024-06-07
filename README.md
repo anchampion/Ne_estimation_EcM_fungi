@@ -5,10 +5,10 @@ Anouck Champion
 
 This document describes the analyses carried out in R and Genotoul
 bioinfo to determine the effective population size (Ne) in 4 species of
-ectomycorrhizal fungi : Boletus edulis, Suillus brevipes, Suillus luteus
-and Tuber melanosporum. These analyses include a filtering phase of SNPs
-and microsatellite data, and an analysis part dedicated to the
-identification of bias in Ne estimation.
+ectomycorrhizal fungi : *Boletus edulis*, *Suillus brevipes*, *Suillus
+luteus* and *Tuber melanosporum*. These analyses include a filtering
+phase of SNPs and microsatellite data, and an analysis part dedicated to
+the identification of bias in Ne estimation.
 
 ## Packages loading
 
@@ -54,11 +54,21 @@ library(RClone)
 library(hierfstat)
 ```
 
+## Datasets
+
+The initial data sets used in this script are available online on Zenodo
+using the following DOI :
+
+- *Boletus edulis* : <https://doi.org/10.5281/zenodo.11516949>
+- *Tuber melanosporum* : <https://doi.org/10.5281/zenodo.11517147>
+- SNPs datasets : available in the supplementary materials of the
+  publications.
+
 ## Effect of ploidy on Ne estimations
 
 Dataset used : *Tuber melanosporum* from Taschen et al. 2016
 
-We want to compare Ne estimations (and other metrics : He, Fis) for 3
+We want to compare *Ne* estimations (and other metrics : He, Fis) for 3
 different approaches :
 
 - 1 : Use the “zygotes” (diploid data) provided in the article
@@ -70,8 +80,8 @@ different approaches :
 
 Before accounting for the impact of ploidy, we must check 2 things :
 
-- are they missing data in the dataset ?
-- are they clones in the dataset ?
+- are there missing data in the dataset ?
+- are there clones in the dataset ?
 - is the population homogenous or structured ?
 
 #### Diploid data (zygotes)
@@ -84,7 +94,7 @@ data<-read.genepop(here("Data", "Data_processed", "Tuber_melanosporum_Taschen201
                         "zygotes_all_noclones.gen"), ncode = 3L, quiet = TRUE)
 ```
 
-Clones were already removed from this dataset, so we move to structure
+Clones were already removed from this dataset, so we move to structure.
 
 ``` r
 # Assessing structure using DAPC from the adegenet package
@@ -95,7 +105,7 @@ scatter(dapc0)
 ```
 
 We will use only the SB1 and SB2 sites, and consider them as 1
-homogenous population, with regard to DAPC. Then, we start from the
+homogeneous population, with regard to DAPC. Then, we start from the
 original dataset. This is an example for SB1, but the same code was used
 for SB2.
 
@@ -122,7 +132,7 @@ zyg_SB1
     ##  // Optional content
     ##    @pop: population of each individual (group size range: 20-20)
 
-Filtering for missing data (with *poppr*)
+Filtering for missing data (with *poppr*).
 
 ``` r
 missing.loc<-missingno(zyg_SB1, type = "loci", cutoff = 0.20);missing.loc
@@ -238,7 +248,7 @@ write.table(data2,
             sep = "\t")
 ```
 
-Determination of MLGs
+Determination of MLGs.
 
 ``` r
 # List unique alleles per locus
@@ -322,7 +332,7 @@ freq_RR(data2)
     ## 31 locus_11    182 0.950
     ## 32 locus_11    192 0.050
 
-Determination of MLLs
+Determination of MLLs.
 
 ``` r
 #genetic distances computation, distance on allele differences:
@@ -350,7 +360,7 @@ respop <- genet_dist(data2);respop # max 10 differences between genotypes
 ressim <- genet_dist_sim(data2, nbrepeat = 1000) #theoretical distribution : sexual reproduction
 ```
 
-    ## [1] "Number of MLG sim = 238"
+    ## [1] "Number of MLG sim = 249"
 
 ``` r
 ressimWS <- genet_dist_sim(data2, genet = TRUE, nbrepeat = 1000) #idem, without selfing
@@ -508,7 +518,7 @@ zyg_SB1 <- data_noclones
 ```
 
 What about genetic structure ? Population structure has been already
-explored before. SB1 is a homogenous population.
+explored before. SB1 is a homogeneous population.
 
 ``` r
 # Export the final dataset that will be used after
@@ -540,7 +550,7 @@ haplo_SB1 <- read.genalex(here("Data", "Data_processed", "Tuber_melanosporum_Tas
 haplo_SB1
 ```
 
-Filtering for missing data (with *poppr*)
+Filtering for missing data (with *poppr*).
 
 ``` r
 missing.loc<-missingno(haplo_SB1, type = "loci", cutoff = 0.20);missing.loc
@@ -563,7 +573,7 @@ head(haplodata)
 MLG_tab(haplodata)
 ```
 
-Determination of MLLs
+Determination of MLLs.
 
 ``` r
 respop <- genet_dist(haplodata, haploid = TRUE);respop
@@ -580,7 +590,7 @@ MLLlist <- MLL_generator(haplodata, haploid = TRUE, alpha2 = 0)
 MLLlist
 ```
 
-Extract one individual from each MLL
+Extract one individual from each MLL.
 
 ``` r
 new_ind <- sapply(MLLlist, `[[`, 1)
@@ -792,8 +802,8 @@ comb
 
 The statistical plan is the following :
 
-- 1 observation = 1 Ne estimation (+ Jackknife CI)
-- 1 variable = Ne
+- 1 observation = 1 *Ne* estimation (+ Jackknife CI)
+- 1 variable = *Ne*
 - 3 factors : zyg, dup, comb
 - 10 replicates for each factor
 
@@ -947,14 +957,14 @@ metrics <- metrics[,c(1,2,4)]
 write_csv(metrics, here("Outputs", "Brief_results", "lifecycle_Tub_mel", "Report_analysis", "new_metrics_He_Fis.csv"))
 ```
 
-#### Ne estimation
+#### *Ne* estimation
 
-The estimation of Ne is performed using NeEstimator, on the 10
+The estimation of *Ne* is performed using NeEstimator, on the 10
 replicates of each group (zygotes, duplicated, combined).
 
 ## Effect of clonality on Ne estimation
 
-Dataset used : *Boletus edulis* from Hoffman et al. 2020
+Dataset used : *Boletus edulis* from Hoffman et al. 2020.
 
 In this part, we are looking for an effect of the presence of clones in
 a genetic dataset on the estimation of Ne.
@@ -963,8 +973,8 @@ a genetic dataset on the estimation of Ne.
 
 Before accounting for the impact of clonality, we must check 2 things :
 
-- are they missing data in the dataset ?
-- is the population homogenous or structured ?
+- are there missing data in the dataset ?
+- is the population homogeneous or structured ?
 
 The original dataset :
 
@@ -972,7 +982,7 @@ The original dataset :
 data <- read.genepop(here("Data", "Data_processed", "Boletus_edulis_Hoffman2020","Boletus_edulis.gen"), ncode = 2L, quiet = TRUE)
 ```
 
-Filtering for missing data with *poppr* package
+Filtering for missing data with *poppr* package.
 
 ``` r
 # Missing data correction
@@ -999,7 +1009,7 @@ mapping_df <- data.frame(old_id = ordered_ids, new_id = sequence(length(ordered_
 rownames(data@tab) <- mapping_df$new_id
 ```
 
-Population structure analysis (using DAPC from *adegenet* package)
+Population structure analysis (using DAPC from *adegenet* package).
 
 ``` r
 # Structure analysis to find homogenous pops
@@ -1041,7 +1051,7 @@ Pop1 <- Pops$Pop1 ; Pop2 <- Pops$Pop2 ; Pop3 <- Pops$Pop3
 ```
 
 Before going further, let’s do a quick analysis of MLG, to see which
-population will have enough “individuals”
+population will have enough “individuals”.
 
 ``` r
 poppr(Pop1)
@@ -1229,7 +1239,7 @@ for (i in seq_along(sampled_geninds)) {
 Use the same code for each dataset, just change the name of the output
 file and genind object.
 
-Then Ne is estimated in NeEstimator for the 10 replicates of each
+Then *Ne* is estimated in NeEstimator for the 10 replicates of each
 treatment. The results are analysed with statistical tests to assess
 significant differences between treatments.
 
@@ -1388,8 +1398,8 @@ letters <- multcompLetters(TUKEY$`Corr`[,4]);letters
     ## nolarge   nomed   nomlg   nomll  nocorr 
     ##    "ab"    "ac"    "cd"     "d"     "b"
 
-The results were plotted using the ggplot2 package, to produce Figure 2
-of the report.
+The results were plotted using the *ggplot2* package, to produce Figure
+2 of the report.
 
 ``` r
 # Define the order of factors
@@ -1440,7 +1450,7 @@ and creating 10 replicates of 2K SNPs samples is available in the
 “scripts” folder : “Sui_bre_structure.sh”.
 
 Once all datasets are created (in VCF format), they are converted into
-the GENEPOP format using the software programme PGDSpider. Ne is
+the GENEPOP format using the software programme PGDSpider. *Ne* is
 estimated using these new files in NeEstimator.
 
 ## Effect of pseudo-replication on Ne estimation
@@ -1465,19 +1475,19 @@ SNPs from the original dataset.
 A script for creating subsets of 2K and 20K SNPs with 10 replicates is
 available in the “scripts” folder : “Sui_bre_SNPs.sh”.
 
-#### Ne estimation
+#### *Ne* estimation
 
 Once all datasets are created (in VCF format), they are converted into
-the GENEPOP format using the software programme PGDSpider. Ne is
+the GENEPOP format using the software programme PGDSpider. *Ne* is
 estimated using these new files in NeEstimator.
 
-We want to compare 2 means : mean Ne for 20 000 SNPs and mean Ne for 2
-000 SNPs. As we have sampled SNPs randomly from the same pool of SNPs,
+We want to compare 2 means : mean *Ne* for 20,000 SNPs and mean *Ne* for
+2,000 SNPs. As we have sampled SNPs randomly from the same pool of SNPs,
 the samples are not independent. Then, we’ll use a Wilcoxon test for
 paired samples (non parametric).
 
-Retrieve the dataframe containing Ne estimations, and subset the data
-according to poplations.
+Retrieve the dataframe containing *Ne* estimations, and subset the data
+according to populations.
 
 ``` r
 # Data
@@ -1494,7 +1504,7 @@ wycol <- filter(data, Pop == "wycol")
 minwhi <- filter(data, Pop == "minwhi")
 ```
 
-Explore the data
+Explore the data.
 
 ``` r
 # Data exploration
@@ -1504,7 +1514,7 @@ boxplot(Ne.~Nbr_SNPs, data = all, main = "Ne estimation from 20K SNPs and 2K SNP
 
 ![](Complete_workflow_files/figure-gfm/unnamed-chunk-44-1.png)<!-- -->
 
-Statistical tests
+Statistical tests.
 
 ``` r
 # Wilcoxon test
@@ -1631,15 +1641,15 @@ available in the “scripts” folder : “Sui_lut_SNPs.sh”.
 #### Ne estimation
 
 Once all datasets are created (in VCF format), they are converted into
-the GENEPOP format using the software programme PGDSpider. Ne is
+the GENEPOP format using the software programme PGDSpider. *Ne* is
 estimated using these new files in NeEstimator.
 
-We want to compare 2 means : mean Ne for 20 000 SNPs and mean Ne for 2
-000 SNPs. As we have sampled SNPs randomly from the same pool of SNPs,
+We want to compare 2 means : mean *Ne* for 20,000 SNPs and mean *Ne* for
+2,000 SNPs. As we have sampled SNPs randomly from the same pool of SNPs,
 the samples are not independent. Then, we’ll use a Wilcoxon test for
 paired samples (non parametric).
 
-Retrieve the dataframe containing Ne estimates
+Retrieve the dataframe containing *Ne* estimates.
 
 ``` r
 # Data
@@ -1649,7 +1659,7 @@ data <- read.csv(here("Outputs", "Brief_results", "pseudorep_Suillus", "Report_a
 # There is only 1 population
 ```
 
-Explore the data
+Explore the data.
 
 ``` r
 # Data exploration
@@ -1659,7 +1669,7 @@ boxplot(Ne.~Nbr_SNPs, data = data, main = "Ne estimation from 20K SNPs and 2K SN
 
 ![](Complete_workflow_files/figure-gfm/unnamed-chunk-48-1.png)<!-- -->
 
-Statistical tests
+Statistical tests.
 
 ``` r
 # Wilcoxon test
